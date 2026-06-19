@@ -167,7 +167,7 @@
 
   // ---------- session log handling ----------
   function newSession(dateKey, dayId) {
-    return { dateKey, dayId, exercises: {}, customExercises: [], order: {}, warmupChecks: {}, cardio: { minutes: '', seconds: '', distance: '', done: false }, sessionNotes: '' };
+    return { dateKey, dayId, exercises: {}, customExercises: [], order: {}, removed: [], warmupChecks: {}, cardio: { minutes: '', seconds: '', distance: '', done: false }, sessionNotes: '' };
   }
   function newExLog(ex) {
     const n = Math.max(1, ex.defaultSets || 1);
@@ -189,7 +189,8 @@
     const saved = state.log.order[section.id];
     let ids = saved ? saved.filter((id) => baseIds.indexOf(id) !== -1) : baseIds.slice();
     baseIds.forEach((id) => { if (ids.indexOf(id) === -1) ids.push(id); });
-    return ids.map((id) => base.find((e) => e.id === id)).filter(Boolean);
+    const removed = state.log.removed || [];
+    return ids.map((id) => base.find((e) => e.id === id)).filter(Boolean).filter((e) => removed.indexOf(e.id) === -1);
   }
 
   function save() {
@@ -571,11 +572,13 @@
   }
   function openRowMenu(ev, section, ex, idx, count) {
     ev.stopPropagation();
-    state.menuCtx = { sectionId: section.id, exId: ex.id, idx, count };
+    state.menuCtx = { sectionId: section.id, exId: ex.id, idx, count, custom: !!ex.custom };
     const m = $('#rowMenu');
     m.querySelector('[data-act="up"]').disabled = idx === 0;
     m.querySelector('[data-act="down"]').disabled = idx === count - 1;
-    m.querySelector('[data-act="remove"]').hidden = !ex.custom;
+    const rm = m.querySelector('[data-act="remove"]');
+    rm.hidden = false; // every lift can be removed now
+    rm.textContent = ex.custom ? 'Remove lift' : 'Remove for today';
     m.hidden = false;
     const r = ev.currentTarget.getBoundingClientRect();
     m.style.top = (r.bottom + 6) + 'px';
@@ -583,6 +586,7 @@
   }
   function buildListSection(section) {
     const exs = orderedExercises(section);
+    if (!exs.length) return null; // whole section removed for today — don't render an empty header
     return h('div', { class: 'list-section', dataset: { section: section.id } },
       h('div', { class: 'list-section-label' },
         h('h3', null, section.label),
@@ -699,6 +703,7 @@
     body.appendChild(buildSetsBlock(section, ex, e));
 
     if (ex.custom) body.appendChild(h('button', { class: 'btn btn-ghost block danger', onclick: () => removeCustom(ex.id) }, 'Remove this lift'));
+    else body.appendChild(h('button', { class: 'btn btn-ghost block danger', onclick: () => removeForToday(ex.id) }, 'Remove from today'));
 
     // jump to the next lift in the day (or back to the list on the last one)
     const seq = dayLiftSequence();
@@ -801,6 +806,18 @@
     if (state.liftEx && state.liftEx.id === exId) { $('#liftScreen').hidden = true; state.liftEx = null; state.liftSectionObj = null; }
     save(); renderWorkout();
   }
+  // skip a built-in (program) lift for today only — hidden from the day, restorable from the footer
+  function removeForToday(exId) {
+    if (!state.log.removed) state.log.removed = [];
+    if (state.log.removed.indexOf(exId) === -1) state.log.removed.push(exId);
+    if (state.liftEx && state.liftEx.id === exId) { closeKeypad(); $('#liftScreen').hidden = true; state.liftEx = null; state.liftSectionObj = null; }
+    save(); renderWorkout();
+    toast('Removed for today');
+  }
+  function restoreLift(exId) {
+    state.log.removed = (state.log.removed || []).filter((id) => id !== exId);
+    save(); renderWorkout();
+  }
 
   // ---------- full day render ----------
   function renderTabs() {
@@ -859,7 +876,7 @@
 
     (day.sections || []).forEach((section) => {
       orderedExercises(section).forEach((ex) => state.activeExIds.push(ex.id));
-      view.appendChild(buildListSection(section));
+      const node = buildListSection(section); if (node) view.appendChild(node);
     });
 
     // custom lifts (always available unless a pure rest day)
@@ -870,6 +887,14 @@
 
     if (day.type !== 'rest') { const def = buildDeferred(); if (def) view.appendChild(def); }
     view.appendChild(buildSessionNotes());
+
+    // lifts you removed today — tap one to bring it back
+    const removedToday = state.log.removed || [];
+    if (day.type !== 'rest' && removedToday.length) {
+      view.appendChild(h('div', { class: 'removed-note' },
+        h('span', { class: 'removed-label' }, 'Removed today:'),
+        removedToday.map((id) => h('button', { class: 'removed-chip', onclick: () => restoreLift(id) }, (exNameById(id) || 'Lift') + ' ↺'))));
+    }
 
     if (day.type !== 'rest') {
       view.appendChild(h('div', { class: 'finish' },
@@ -1433,6 +1458,7 @@
     state.log.exercises = state.log.exercises || {};
     state.log.customExercises = state.log.customExercises || [];
     state.log.order = state.log.order || {};
+    state.log.removed = state.log.removed || [];
     state.log.warmupChecks = state.log.warmupChecks || {};
     state.log.cardio = state.log.cardio || { minutes: '', distance: '', done: false };
     if (typeof state.log.sessionNotes !== 'string') state.log.sessionNotes = '';
@@ -1679,7 +1705,7 @@
       if (!c) return;
       if (b.dataset.act === 'up') move(c.sectionId, c.exId, -1);
       else if (b.dataset.act === 'down') move(c.sectionId, c.exId, 1);
-      else if (b.dataset.act === 'remove') removeCustom(c.exId);
+      else if (b.dataset.act === 'remove') { if (c.custom) removeCustom(c.exId); else removeForToday(c.exId); }
     });
     document.addEventListener('click', (e) => {
       if (!$('#rowMenu').hidden && !e.target.closest('#rowMenu') && !e.target.closest('.lift-menu')) $('#rowMenu').hidden = true;
