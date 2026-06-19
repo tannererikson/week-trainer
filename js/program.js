@@ -160,17 +160,27 @@ window.WT_PROGRAM = {
 
     /* ---------------- FRIDAY ---------------- */
     {
-      id: 'fri', tabLabel: 'Light', title: 'Light', subtitle: 'Light pulling or rest', type: 'light',
-      cardio: { kind: 'walk', prescription: 'Optional easy walk or easy bike.', trackMinutes: true, trackDistance: true },
-      warmup: ['Easy mobility', 'Band pull-aparts'],
+      id: 'fri', tabLabel: 'Back', title: 'Back', subtitle: 'Pull day — width, thickness, posture', type: 'training',
+      cardio: { kind: 'walk', prescription: 'Optional easy walk or bike to warm up.', trackMinutes: true, trackDistance: true },
+      warmup: ['Band pull-aparts', 'Light lat pulldown to feel the lats'],
       sections: [
         {
-          id: 'fri-pull', label: 'Light pulling (optional)',
+          id: 'fri-back', label: 'Back',
           exercises: [
-            { id: 'fri-latpull', name: 'Light lat pulldown', scheme: '2–3 x 12–15 easy', defaultSets: 3,
-              targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'], secondary: ['biceps'] }, formCues: ['Easy effort, focus on the squeeze'] },
-            { id: 'fri-facepull', name: 'Cable face pulls', scheme: '2–3 x 15', defaultSets: 3,
-              targetMuscle: { label: 'Rear delts' }, muscles: { primary: ['rear_delts'], secondary: ['traps'] }, formCues: ['Posture work, keep it light'] }
+            { id: 'fri-latpulldown', name: 'Lat pulldown (wide)', scheme: '4 x 10-12', defaultSets: 4,
+              targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'], secondary: ['biceps'] }, formCues: ['Drive elbows down to your sides', 'Chest tall, no big lean-back'] },
+            { id: 'fri-cablerow', name: 'Seated cable row', scheme: '4 x 10-12', defaultSets: 4,
+              targetMuscle: { label: 'Mid back' }, muscles: { primary: ['mid_back'], secondary: ['lats', 'biceps'] }, formCues: ['Row to the belly, squeeze the shoulder blades'] },
+            { id: 'fri-machinerow', name: 'Chest-supported machine row', scheme: '3 x 10-12', defaultSets: 3,
+              targetMuscle: { label: 'Mid back' }, muscles: { primary: ['mid_back'], secondary: ['lats'] }, formCues: ['Pull with the elbows, not the hands'] },
+            { id: 'fri-strawpull', name: 'Straight-arm cable pulldown', scheme: '3 x 12-15', defaultSets: 3,
+              targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'] }, formCues: ['Arms long, big stretch at the top'] },
+            { id: 'fri-shrugs', name: 'Machine shrugs', scheme: '3 x 12-15', defaultSets: 3,
+              targetMuscle: { label: 'Traps' }, muscles: { primary: ['traps'] }, formCues: ['Straight up, pause + squeeze at the top'] },
+            { id: 'fri-facepull', name: 'Cable face pulls', scheme: '3 x 15-20', defaultSets: 3,
+              targetMuscle: { label: 'Rear delts' }, muscles: { primary: ['rear_delts'], secondary: ['traps'] }, formCues: ['Pull to the forehead, elbows high', 'Light + controlled'] },
+            { id: 'fri-revpec', name: 'Reverse pec deck', scheme: '3 x 15', defaultSets: 3,
+              targetMuscle: { label: 'Rear delts' }, muscles: { primary: ['rear_delts'] }, formCues: ['Lead with the elbows', 'Slow on the way back'] }
           ]
         }
       ]
