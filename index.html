@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07090e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Week Trainer" />
+  <title>Week Trainer</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <div class="weeknav">
+      <button class="weeknav-btn" id="weekPrev" aria-label="Previous week">&#8249;</button>
+      <button class="weeknav-label" id="weekLabel" aria-label="Jump to this week">This week</button>
+      <button class="weeknav-btn" id="weekNext" aria-label="Next week">&#8250;</button>
+      <button class="gear" id="btnTools" aria-label="Tools">&#9881;<span class="badge" id="syncBadge" hidden></span></button>
+    </div>
+    <nav class="tabs" id="dayTabs" aria-label="Days of the week"></nav>
+  </header>
+
+  <main id="dayView" class="dayview"><!-- workout list renders here --></main>
+  <section id="otherView" class="otherview" hidden><!-- Body / Targets / Log --></section>
+
+  <!-- Docked rest countdown — appears after you complete a set -->
+  <div class="restbar" id="restBar" hidden>
+    <button class="rest-x" id="restClose" aria-label="Dismiss rest timer">&times;</button>
+    <div class="rest-title" id="restLabel">Rest</div>
+    <div class="rest-row">
+      <button class="rest-adj" id="restMinus" aria-label="Subtract 10 seconds">&minus;10</button>
+      <span class="rest-time" id="restTime">1:00</span>
+      <button class="rest-adj" id="restPlus" aria-label="Add 10 seconds">+10</button>
+    </div>
+    <button class="rest-pause" id="restPause" aria-label="Pause or resume">&#10073;&#10073;</button>
+  </div>
+
+  <!-- Custom numeric keypad — replaces the iOS keyboard for set entry -->
+  <div class="keypad" id="keypad" hidden>
+    <div class="kp-grid">
+      <button class="kp-key" data-k="1">1</button>
+      <button class="kp-key" data-k="2">2</button>
+      <button class="kp-key" data-k="3">3</button>
+      <button class="kp-key" data-k="4">4</button>
+      <button class="kp-key" data-k="5">5</button>
+      <button class="kp-key" data-k="6">6</button>
+      <button class="kp-key" data-k="7">7</button>
+      <button class="kp-key" data-k="8">8</button>
+      <button class="kp-key" data-k="9">9</button>
+      <button class="kp-key kp-dot" id="kpDot" data-k=".">.</button>
+      <button class="kp-key" data-k="0">0</button>
+      <button class="kp-key kp-back" data-k="back" aria-label="Delete">&#9003;</button>
+    </div>
+    <button class="kp-action" id="kpAction">Done</button>
+  </div>
+
+  <!-- Bottom section nav -->
+  <nav class="bottomnav" id="bottomNav" aria-label="Sections">
+    <button class="navbtn on" data-tab="workout"><span class="navicon"><svg viewBox="0 0 24 24"><path d="M6.5 8v8M4 9.5v5M17.5 8v8M20 9.5v5M7 12h10"/></svg></span><span class="navlbl">Workout</span></button>
+    <button class="navbtn" data-tab="body"><span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M6 21c0-4 2.6-7 6-7s6 3 6 7"/></svg></span><span class="navlbl">Body</span></button>
+    <button class="navbtn" data-tab="targets"><span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></span><span class="navlbl">Targets</span></button>
+    <button class="navbtn" data-tab="log"><span class="navicon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9.5h16M8 3v4M16 3v4"/></svg></span><span class="navlbl">Log</span></button>
+  </nav>
+
+  <!-- per-row options menu -->
+  <div class="rowmenu" id="rowMenu" hidden>
+    <button data-act="up">Move up</button>
+    <button data-act="down">Move down</button>
+    <button data-act="remove" class="danger">Remove lift</button>
+  </div>
+
+  <!-- Tools sheet: copy, sync, backup, clear, advanced -->
+  <div class="sheet-backdrop" id="dataSheet" hidden>
+    <div class="sheet" role="dialog" aria-label="Tools">
+      <h2>Tools</h2>
+
+      <div class="sheet-section">
+        <h3>This workout</h3>
+        <button class="btn btn-ghost block" id="btnCopy">Copy summary for Claude</button>
+      </div>
+
+      <div class="sheet-section">
+        <h3>Sync to Mac</h3>
+        <p class="sheet-note" id="syncPending">All sessions synced.</p>
+        <button class="btn btn-primary block" id="btnSyncNow">Sync now</button>
+      </div>
+
+      <div class="sheet-section">
+        <h3>Backup &amp; restore</h3>
+        <p class="sheet-note">All data lives on this device. Export a JSON file to back up or move to a new phone.</p>
+        <button class="btn btn-ghost block" id="btnExport">Export all data (JSON)</button>
+        <label class="btn btn-ghost block" for="importFile">Import from JSON&hellip;</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+      </div>
+
+      <div class="sheet-section">
+        <h3>This day</h3>
+        <button class="btn btn-ghost block" id="btnClear">Clear logged entries for this day</button>
+      </div>
+
+      <details class="sheet-section">
+        <summary>Advanced</summary>
+        <label class="adv-label">Mac sync URL <span class="muted">(leave blank if the app is served by your Mac)</span>
+          <input type="text" id="macUrl" inputmode="url" placeholder="e.g. http://192.168.1.50:5055" />
+        </label>
+      </details>
+
+      <button class="btn btn-ghost block" id="btnCloseData">Close</button>
+    </div>
+  </div>
+
+  <!-- Rest-length picker (per lift) -->
+  <div class="sheet-backdrop" id="restSheet" hidden>
+    <div class="sheet" role="dialog" aria-label="Rest timer">
+      <h2>Rest timer</h2>
+      <label class="rest-toggle-row">
+        <span>Rest timer between sets</span>
+        <input type="checkbox" id="restEnabled" />
+      </label>
+      <p class="sheet-note" id="restPickerFor">How long to rest after each set.</p>
+      <div class="rest-options" id="restOptions"></div>
+      <button class="btn btn-ghost block" id="restSheetClose">Close</button>
+    </div>
+  </div>
+
+  <!-- Add/edit note (per lift) -->
+  <div class="modal-backdrop" id="noteModal" hidden>
+    <div class="modal" role="dialog" aria-label="Note">
+      <h2 id="noteTitle">Add Note</h2>
+      <textarea id="noteInput" class="note-input" rows="3" placeholder="Note for this lift…"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="noteCancel">Cancel</button>
+        <button class="btn btn-primary" id="noteSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log a body measurement (Body → Results) -->
+  <div class="modal-backdrop" id="bodyEntryModal" hidden>
+    <div class="modal" role="dialog" aria-label="Log measurement">
+      <h2 id="bodyEntryTitle">Log measurement</h2>
+      <label class="adv-label">Date
+        <input type="date" id="bodyEntryDate" />
+      </label>
+      <div id="bodyEntryFields" class="body-fields"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="bodyEntryCancel">Cancel</button>
+        <button class="btn btn-primary" id="bodyEntrySave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-lift detail page (tap a lift to open) -->
+  <div class="screen lift-screen" id="liftScreen" hidden>
+    <div class="lift-hero" id="liftHero">
+      <button class="lift-close" id="liftClose" aria-label="Close">&times;</button>
+      <div class="lift-hero-inner">
+        <h1 id="liftTitle">Lift</h1>
+        <a class="lift-howto" id="liftHowTo" target="_blank" rel="noopener">&#9654; How-To</a>
+      </div>
+    </div>
+    <div class="lift-body" id="liftBody"></div>
+  </div>
+
+  <!-- History + Trends (per lift) -->
+  <div class="screen" id="histScreen" hidden>
+    <header class="screen-top">
+      <button class="screen-back" id="histBack" aria-label="Back">&#8592;</button>
+      <h2 id="histTitle">Lift</h2>
+    </header>
+    <div class="seg" id="histTabs">
+      <button class="seg-btn on" data-tab="results">Results</button>
+      <button class="seg-btn" data-tab="trends">Trends</button>
+    </div>
+    <div class="screen-body" id="histBody"></div>
+  </div>
+
+  <!-- Past-workout detail (Log → tap a workout) -->
+  <div class="screen" id="sessionScreen" hidden>
+    <header class="screen-top">
+      <button class="screen-back" id="sessionScreenBack" aria-label="Back">&#8592;</button>
+      <h2 id="sessionScreenDate">Workout</h2>
+    </header>
+    <div class="screen-body" id="sessionScreenBody"></div>
+  </div>
+
+  <!-- Muscle detail (Recovery → tap a muscle) -->
+  <div class="screen" id="muscleScreen" hidden>
+    <header class="screen-top">
+      <button class="screen-back" id="muscleScreenBack" aria-label="Back">&#8592;</button>
+      <h2 id="muscleScreenName">Muscle</h2>
+    </header>
+    <div class="screen-body" id="muscleScreenBody"></div>
+  </div>
+
+  <!-- Stat detail (Results → tap a metric) -->
+  <div class="screen" id="statScreen" hidden>
+    <header class="screen-top">
+      <button class="screen-back" id="statScreenBack" aria-label="Back">&#8592;</button>
+      <h2 id="statScreenName">Stat</h2>
+    </header>
+    <div class="screen-body" id="statScreenBody"></div>
+  </div>
+
+  <!-- Edit a muscle's weekly set target (Targets → tap a muscle) -->
+  <div class="modal-backdrop" id="targetModal" hidden>
+    <div class="modal" role="dialog" aria-label="Weekly target">
+      <h2 id="targetModalName">Target</h2>
+      <p class="sheet-note">Weekly set goal for this muscle.</p>
+      <div class="target-stepper">
+        <button class="step-btn" id="targetMinus" aria-label="Decrease">&minus;</button>
+        <input type="number" inputmode="numeric" id="targetInput" min="0" />
+        <button class="step-btn" id="targetPlus" aria-label="Increase">+</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="targetCancel">Cancel</button>
+        <button class="btn btn-primary" id="targetSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile (height / age / sex) — powers BMI, lean-mass index, metabolic rate -->
+  <div class="modal-backdrop" id="profileModal" hidden>
+    <div class="modal" role="dialog" aria-label="Profile">
+      <h2>Your profile</h2>
+      <p class="sheet-note">Used to compute BMI, lean-mass index and metabolic rate.</p>
+      <label class="body-field"><span class="body-field-name">Height (in)</span><input type="number" inputmode="decimal" step="0.5" id="profHeight" placeholder="—" /></label>
+      <label class="body-field"><span class="body-field-name">Age</span><input type="number" inputmode="numeric" id="profAge" placeholder="—" /></label>
+      <label class="body-field"><span class="body-field-name">Sex</span>
+        <select id="profSex" class="body-select"><option value="male">Male</option><option value="female">Female</option></select>
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="profCancel">Cancel</button>
+        <button class="btn btn-primary" id="profSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- public build: no Mac to sync to — Finish & Save just stores on this phone -->
+  <script>window.WT_PUBLIC = true;</script>
+  <script src="js/store.js" defer></script>
+  <script src="js/program.js" defer></script>
+  <script src="js/muscles.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
