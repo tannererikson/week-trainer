@@ -58,6 +58,24 @@
     <button class="kp-action" id="kpAction">Done</button>
   </div>
 
+  <!-- Rate Your Last Set — pops up when a lift's last set is completed (RIR / reps-in-reserve) -->
+  <div class="ratesheet" id="rateSheet" hidden>
+    <div class="rate-head">
+      <span class="rate-title">Rate Your Last Set</span>
+      <button class="rate-x" id="rateClose" aria-label="Dismiss">&times;</button>
+    </div>
+    <p class="rate-q">How many more reps could you do?</p>
+    <div class="rate-opts" id="rateOpts">
+      <button class="rate-opt rate-4" data-rir="4+">4+</button>
+      <button class="rate-opt rate-3" data-rir="3">3</button>
+      <button class="rate-opt rate-2" data-rir="2">2</button>
+      <button class="rate-opt rate-1" data-rir="1">1</button>
+      <button class="rate-opt rate-0" data-rir="0">0</button>
+    </div>
+    <div class="rate-labels"><span>Too Easy</span><span>Max Effort</span></div>
+    <button class="rate-done" id="rateDone">Done</button>
+  </div>
+
   <!-- Bottom section nav -->
   <nav class="bottomnav" id="bottomNav" aria-label="Sections">
     <button class="navbtn on" data-tab="workout"><span class="navicon"><svg viewBox="0 0 24 24"><path d="M6.5 8v8M4 9.5v5M17.5 8v8M20 9.5v5M7 12h10"/></svg></span><span class="navlbl">Workout</span></button>

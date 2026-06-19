@@ -252,6 +252,31 @@ input, textarea, button { font: inherit; color: inherit; }
 /* keypad is taller than the rest bar — its spacing must win even while resting, or the active set hides under it */
 body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bottom)) !important; }
 
+/* ---------- Rate Your Last Set (RIR) ---------- */
+.ratesheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 73;
+  background: var(--bg-2); border-top: 1px solid var(--line);
+  border-top-left-radius: 20px; border-top-right-radius: 20px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 44px rgba(0,0,0,0.6);
+}
+.ratesheet[hidden] { display: none; }
+.rate-head { display: flex; align-items: center; justify-content: space-between; }
+.rate-title { font-size: 1.3rem; font-weight: 800; font-style: italic; }
+.rate-x { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 999px; border: none; background: rgba(255,255,255,0.08); color: var(--text); font-size: 1.1rem; }
+.rate-q { color: var(--muted); font-size: 0.95rem; margin: 10px 0 14px; }
+.rate-opts { display: flex; gap: 10px; }
+.rate-opt { flex: 1; min-width: 0; height: 66px; border-radius: 14px; border: none; font-size: 1.5rem; font-weight: 800; font-style: italic; }
+.rate-opt.sel { outline: 3px solid #fff; outline-offset: 2px; }
+.rate-4 { background: #f3edb8; color: #1a1205; }
+.rate-3 { background: #f5d76e; color: #1a1205; }
+.rate-2 { background: #ef6f7b; color: #2a0a10; }
+.rate-1 { background: #e23a5e; color: #fff; }
+.rate-0 { background: #a01f38; color: #fff; }
+.rate-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.82rem; color: var(--muted); }
+.rate-done { display: block; margin: 16px 0 0 auto; min-width: 150px; height: 50px; border-radius: 999px; border: none; background: #fff; color: #111; font-weight: 800; font-style: italic; font-size: 1.05rem; padding: 0 28px; }
+.rate-done:active { filter: brightness(0.92); }
+
 /* ---------- rest picker ---------- */
 .rest-toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.92rem; padding: 2px 0 4px; }
 .rest-toggle-row input { width: 46px; height: 26px; }

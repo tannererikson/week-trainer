@@ -378,6 +378,23 @@
     if (complete) complete();
   }
 
+  // ---------- Rate Your Last Set (RIR / reps-in-reserve) ----------
+  // Pops up when a lift's last set is completed; stores e.rir ('4+'..'0') for future auto-progression.
+  function openRatePanel(ex) {
+    dismissRest(); // done with this lift — no rest after the final set
+    state.rateExId = ex.id;
+    const e = state.log.exercises[ex.id] || {};
+    document.querySelectorAll('#rateOpts .rate-opt').forEach((b) => b.classList.toggle('sel', e.rir != null && b.dataset.rir === e.rir));
+    $('#rateSheet').hidden = false;
+  }
+  function closeRatePanel() { $('#rateSheet').hidden = true; state.rateExId = null; }
+  function setRating(val) {
+    const id = state.rateExId; if (!id) return;
+    const e = state.log.exercises[id]; if (!e) return;
+    e.rir = val; save();
+    document.querySelectorAll('#rateOpts .rate-opt').forEach((b) => b.classList.toggle('sel', b.dataset.rir === val));
+  }
+
   // ---------- note modal ----------
   function openNoteModal(ex) {
     state.noteEditExId = ex.id;
@@ -627,6 +644,7 @@
   }
   function closeLift() {
     closeKeypad();
+    closeRatePanel();
     $('#liftScreen').hidden = true;
     state.liftEx = null; state.liftSectionObj = null;
     renderWorkout();
@@ -652,7 +670,8 @@
         badge.classList.toggle('done', v);
         badge.textContent = v ? '✓' : String(i + 1);
         save();
-        if (v && startTimer) startRest(ex);
+        if (v && liftDone(ex)) openRatePanel(ex);   // last set just completed — rate it (no rest needed)
+        else if (v && startTimer) startRest(ex);
       }
       badge.addEventListener('click', () => setDone(!s.done, true));
       // both filled → auto-log the set and start rest (fired by the keypad's "Done")
@@ -1677,6 +1696,11 @@
     // custom keypad
     $('#keypad').addEventListener('click', (e) => { const k = e.target.closest('.kp-key'); if (k && !k.classList.contains('disabled')) keypadPress(k.dataset.k); });
     $('#kpAction').addEventListener('click', keypadAction);
+
+    // rate-your-last-set panel
+    $('#rateOpts').addEventListener('click', (e) => { const b = e.target.closest('.rate-opt'); if (b) setRating(b.dataset.rir); });
+    $('#rateDone').addEventListener('click', closeRatePanel);
+    $('#rateClose').addEventListener('click', closeRatePanel);
     document.addEventListener('click', (e) => {
       // close on tap-outside, but never on the lift-close X (let it fall through to closeLift so one tap exits)
       if (!$('#keypad').hidden && !e.target.closest('#keypad') && !e.target.closest('.setbox') && !e.target.closest('#liftClose')) closeKeypad();
