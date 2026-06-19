@@ -729,18 +729,36 @@
     const log = state.log.cardio;
     const inputs = [];
     if (c.trackMinutes) {
-      // Fitbod-style time entry: digits fill from the right as MM:SS (type 2012 -> 20:12)
-      const fmtTime = (mm, ss) => (mm != null && mm !== '' ? String(mm) : '0') + ':' + String(ss || '').padStart(2, '0');
-      const hasTime = (log.minutes !== '' && log.minutes != null) || (log.seconds !== '' && log.seconds != null);
-      const timeIn = h('input', { type: 'text', inputmode: 'numeric', placeholder: '0:00', value: hasTime ? fmtTime(log.minutes, log.seconds) : '' });
-      timeIn.addEventListener('input', (e) => {
-        const digits = e.target.value.replace(/\D/g, '').slice(0, 4); // MMSS
-        if (!digits) { log.minutes = ''; log.seconds = ''; e.target.value = ''; save(); return; }
-        const ss = digits.slice(-2), mm = digits.slice(0, -2) || '0';
-        log.minutes = mm; log.seconds = ss;
-        e.target.value = mm + ':' + ss.padStart(2, '0');
+      // Fitbod-style time entry: digits fill from the right as MM:SS (type 2012 -> 20:12).
+      // Driven by a digit buffer (not the caret) so you can tap ANYWHERE in the box and just type.
+      let buf = '';
+      { const m = (log.minutes != null && log.minutes !== '' && String(log.minutes) !== '0') ? String(log.minutes) : '';
+        const s = (log.seconds != null && log.seconds !== '') ? String(log.seconds) : '';
+        buf = (m + (m ? s.padStart(2, '0') : s)).replace(/\D/g, '').slice(-4); }
+      const timeIn = h('input', { type: 'text', inputmode: 'numeric', placeholder: '0:00' });
+      const renderTime = () => {
+        if (!buf) timeIn.value = '';
+        else { const ss = buf.slice(-2), mm = buf.slice(0, -2); timeIn.value = (mm || '0') + ':' + ss.padStart(2, '0'); }
+        const n = timeIn.value.length; try { timeIn.setSelectionRange(n, n); } catch (e) {}
+      };
+      const commit = () => {
+        if (!buf) { log.minutes = ''; log.seconds = ''; }
+        else { log.seconds = buf.slice(-2); log.minutes = buf.slice(0, -2) || '0'; }
         save();
+      };
+      renderTime();
+      timeIn.addEventListener('beforeinput', (ev) => {
+        if (ev.inputType === 'insertText') {
+          ev.preventDefault();
+          const d = (ev.data || '').replace(/\D/g, '');
+          if (d) { buf = (buf + d).slice(-4); commit(); renderTime(); }
+        } else if (ev.inputType && ev.inputType.indexOf('delete') === 0) {
+          ev.preventDefault();
+          buf = buf.slice(0, -1); commit(); renderTime();
+        }
       });
+      timeIn.addEventListener('input', renderTime);        // snap back to the buffer if anything slips through
+      timeIn.addEventListener('focus', () => setTimeout(renderTime, 0)); // tap anywhere -> caret to the end
       inputs.push(h('label', { class: 'cardio-field' }, 'Time', timeIn));
     }
     if (c.trackDistance) inputs.push(h('label', { class: 'cardio-field' }, 'Miles',
