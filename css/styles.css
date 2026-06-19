@@ -249,7 +249,8 @@ input, textarea, button { font: inherit; color: inherit; }
 .kp-action:active { filter: brightness(0.92); }
 .setbox.kp-active { outline: 2px solid var(--accent); border-color: var(--accent); }
 /* while the keypad is up, pad the lift body so the active set scrolls clear of it */
-body.keypadding .lift-body { padding-bottom: calc(360px + env(safe-area-inset-bottom)); }
+/* keypad is taller than the rest bar — its spacing must win even while resting, or the active set hides under it */
+body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bottom)) !important; }
 
 /* ---------- rest picker ---------- */
 .rest-toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.92rem; padding: 2px 0 4px; }
