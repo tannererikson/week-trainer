@@ -724,10 +724,19 @@
     const log = state.log.cardio;
     const inputs = [];
     if (c.trackMinutes) {
-      inputs.push(h('label', { class: 'cardio-field' }, 'Min',
-        h('input', { type: 'text', inputmode: 'numeric', placeholder: '0', value: log.minutes || '', oninput: (e) => { log.minutes = e.target.value; save(); } })));
-      inputs.push(h('label', { class: 'cardio-field' }, 'Sec',
-        h('input', { type: 'text', inputmode: 'numeric', placeholder: '00', value: log.seconds || '', oninput: (e) => { log.seconds = e.target.value; save(); } })));
+      // Fitbod-style time entry: digits fill from the right as MM:SS (type 2012 -> 20:12)
+      const fmtTime = (mm, ss) => (mm != null && mm !== '' ? String(mm) : '0') + ':' + String(ss || '').padStart(2, '0');
+      const hasTime = (log.minutes !== '' && log.minutes != null) || (log.seconds !== '' && log.seconds != null);
+      const timeIn = h('input', { type: 'text', inputmode: 'numeric', placeholder: '0:00', value: hasTime ? fmtTime(log.minutes, log.seconds) : '' });
+      timeIn.addEventListener('input', (e) => {
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 4); // MMSS
+        if (!digits) { log.minutes = ''; log.seconds = ''; e.target.value = ''; save(); return; }
+        const ss = digits.slice(-2), mm = digits.slice(0, -2) || '0';
+        log.minutes = mm; log.seconds = ss;
+        e.target.value = mm + ':' + ss.padStart(2, '0');
+        save();
+      });
+      inputs.push(h('label', { class: 'cardio-field' }, 'Time', timeIn));
     }
     if (c.trackDistance) inputs.push(h('label', { class: 'cardio-field' }, 'Miles',
       h('input', { type: 'text', inputmode: 'decimal', placeholder: '0.0', value: log.distance || '', oninput: (e) => { log.distance = e.target.value; save(); } })));
