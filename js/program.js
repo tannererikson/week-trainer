@@ -28,37 +28,37 @@ window.WT_PROGRAM = {
   days: [
     /* ---------------- MONDAY ---------------- */
     {
-      id: 'mon', tabLabel: 'Back', title: 'Back + Traps', subtitle: 'Pull day, posture focus', type: 'training',
+      id: 'mon', tabLabel: 'Chest', title: 'Chest', subtitle: 'Push day', type: 'training',
       cardio: {
         kind: 'treadmill',
-        prescription: 'Jog/walk probe: walk 5 min, then 1-min jog @ 5.0–5.5 mph / 2-min walk, conversational pace. Build easy minutes before chasing speed.',
+        prescription: '2-min walk / 1-min jog intervals, 20–30 min total. Conversational on the walk, relaxed on the jog.',
         trackMinutes: true, trackDistance: true
       },
-      warmup: ['Arm circles + band pull-aparts', 'Cat-cow / thoracic openers', 'Light lat pulldown to feel the lats'],
+      warmup: ['Band pull-aparts', 'Push-ups to feel the chest', 'Light press to warm the shoulders'],
       sections: [
         {
-          id: 'mon-ss1', label: 'Superset 1', note: 'alternate, ~60s rest', superset: true,
+          id: 'mon-main', label: 'Main',
           exercises: [
-            { id: 'mon-shrugs', name: 'Machine shrugs', scheme: '3 x 10–12 · rest 60s', defaultSets: 3,
-              targetMuscle: { label: 'Traps' }, muscles: { primary: ['traps'] }, formCues: ['Shrug straight up, no rolling', 'Pause + squeeze at the top'] },
-            { id: 'mon-facepull', name: 'Cable face pulls', scheme: '3 x 10–12 · rest 60s', defaultSets: 3,
-              targetMuscle: { label: 'Rear delts' }, muscles: { primary: ['rear_delts'], secondary: ['traps'] }, formCues: ['Pull to forehead, elbows high', 'Externally rotate at the end'] }
+            { id: 'mon-inclinepress', name: 'Incline machine press', scheme: '3 x 8–12', defaultSets: 3,
+              targetMuscle: { label: 'Upper chest' }, muscles: { primary: ['chest'], secondary: ['front_delts', 'triceps'] }, formCues: ['Drive through the upper-chest', 'No lockout slam', 'Stretch at the bottom'] },
+            { id: 'mon-flatpress', name: 'Flat machine / DB press', scheme: '3 x 8–12', defaultSets: 3,
+              targetMuscle: { label: 'Chest' }, muscles: { primary: ['chest'], secondary: ['triceps', 'front_delts'] }, formCues: ['Shoulder blades back + down', 'Stretch at the bottom', 'Press to mid-chest'] }
           ]
         },
         {
-          id: 'mon-ss2', label: 'Superset 2', note: 'alternate, ~60s rest', superset: true,
+          id: 'mon-acc', label: 'Accessory',
           exercises: [
-            { id: 'mon-latpull', name: 'Lat pulldowns', scheme: '3 x 10–12 · rest 60s', defaultSets: 3,
-              targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'], secondary: ['biceps'] }, formCues: ['Drive elbows down to your sides', 'Chest tall, no big lean-back'] },
-            { id: 'mon-revpec', name: 'Reverse pec deck', scheme: '3 x 10–12 · rest 60s', defaultSets: 3,
-              targetMuscle: { label: 'Rear delts' }, muscles: { primary: ['rear_delts'] }, formCues: ['Lead with the elbows', 'Slow on the way back'] }
+            { id: 'mon-fly', name: 'Pec deck / cable fly', scheme: '3 x 12–15', defaultSets: 3,
+              targetMuscle: { label: 'Chest (stretch + squeeze)' }, muscles: { primary: ['chest'] }, formCues: ['Soft elbows, big stretch', 'Squeeze at the midline'] },
+            { id: 'mon-crossover', name: 'High-to-low cable crossover', scheme: '3 x 12–15', defaultSets: 3,
+              targetMuscle: { label: 'Lower chest' }, muscles: { primary: ['chest'] }, formCues: ['Pull down and in toward the hips', 'Cross hands slightly at the bottom'] }
           ]
         },
         {
-          id: 'mon-squeeze', label: 'Squeeze lift', note: 'high reps, full squeeze',
+          id: 'mon-finisher', label: 'Finisher', note: 'burnout, near failure',
           exercises: [
-            { id: 'mon-row', name: 'Seated cable row', scheme: '4 x 15–20', defaultSets: 4,
-              targetMuscle: { label: 'Mid back' }, muscles: { primary: ['mid_back'], secondary: ['lats', 'biceps'] }, formCues: ['Row to the belly, squeeze shoulder blades', 'Control the stretch forward'] }
+            { id: 'mon-pushups', name: 'Push-ups', scheme: '2–3 x to failure', defaultSets: 3,
+              targetMuscle: { label: 'Chest' }, muscles: { primary: ['chest'], secondary: ['triceps', 'front_delts'] }, formCues: ['Full range, chest to the floor', 'Body in a straight line'] }
           ]
         }
       ]
