@@ -1571,17 +1571,61 @@
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   }
+
+  // ---------- public build: sync each finished workout to the Google Sheet ----------
+  // One row per filled set + one cardio row, in the shape the Apps Script doPost expects.
+  function buildSyncPayload() {
+    const day = currentDay();
+    const sections = (day.sections || []).slice();
+    if (state.log.customExercises.length) sections.push({ id: 'custom', label: 'Added lifts', exercises: state.log.customExercises });
+    const exercises = [];
+    sections.forEach((section) => {
+      orderedExercises(section).forEach((ex) => {
+        const e = state.log.exercises[ex.id]; if (!e) return;
+        const sets = (e.sets || [])
+          .filter((s) => s.weight !== '' || s.reps !== '')
+          .map((s) => ({ weight: s.weight, reps: s.reps, rir: s.rir, done: !!s.done }));
+        if (!sets.length && !e.note) return;
+        const m = ex.muscles || {};
+        exercises.push({
+          name: ex.name,
+          muscles: { primary: m.primary || [], secondary: m.secondary || [] },
+          sets: sets, note: e.note || '', rir: e.rir || '',
+          focus: (ex.focus === true) || (state.focusExId === ex.id)
+        });
+      });
+    });
+    const payload = {
+      key: (state.config && state.config.syncKey) || '', date: state.dateKey, dayId: state.activeDayId,
+      dayTitle: day.title, volume: calcVolume(), exercises: exercises
+    };
+    const c = state.log.cardio || {};
+    if (c.minutes || c.seconds || c.distance || c.done) {
+      payload.cardio = {
+        type: (day.cardio && day.cardio.kind) || '',
+        minutes: c.minutes || '', seconds: c.seconds || '', miles: c.distance || ''
+      };
+    }
+    return payload;
+  }
+  // no-cors + text/plain body avoids the Apps Script CORS preflight; resolves once dispatched
+  // (we don't need to read the opaque response — a thrown error means it never left the device).
+  async function postSyncSession(payload) {
+    await fetch(window.WT_SYNC_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+  }
+  function postAny(payload) { return window.WT_PUBLIC ? postSyncSession(payload) : postSession(payload); }
+
   async function finishAndSave() {
-    const payload = buildPayload();
     try { await WTStore.setLog(state.dateKey, state.log); } catch (e) {}
-    // public build: nothing to sync to — the workout is saved on this phone
-    if (window.WT_PUBLIC) { toast('Workout saved ✓'); return; }
+    // public build with no sync key set yet: save on-device only, don't claim a sync happened
+    if (window.WT_PUBLIC && !(state.config && state.config.syncKey)) { toast('Workout saved ✓'); return; }
+    const payload = window.WT_PUBLIC ? buildSyncPayload() : buildPayload();
     try {
-      await postSession(payload);
-      toast('Saved to your Mac ✓');
+      await postAny(payload);
+      toast('Workout saved & synced ✓');
     } catch (e) {
       await WTStore.enqueueOutbox(payload);
-      toast('Saved on phone — will sync when your Mac’s reachable');
+      toast('Saved on phone — will sync when you’re online');
     }
     flushOutbox();
   }
@@ -1591,7 +1635,7 @@
     try {
       const items = await WTStore.listOutbox();
       for (const it of items) {
-        try { await postSession(it.payload); await WTStore.removeOutbox(it.id); }
+        try { await postAny(it.payload); await WTStore.removeOutbox(it.id); }
         catch (e) { break; } // likely unreachable — stop and try again later
       }
     } finally { flushing = false; updateSyncBadge(); }
@@ -1670,12 +1714,12 @@
 
     $('#btnCopy').addEventListener('click', () => { copyForClaude(); $('#dataSheet').hidden = true; });
     $('#btnClear').addEventListener('click', clearDay);
-    $('#btnTools').addEventListener('click', () => { $('#macUrl').value = state.config.syncUrl || ''; updateSyncBadge(); $('#dataSheet').hidden = false; });
+    $('#btnTools').addEventListener('click', () => { $('#syncKey').value = state.config.syncKey || ''; updateSyncBadge(); $('#dataSheet').hidden = false; });
     $('#btnCloseData').addEventListener('click', () => { $('#dataSheet').hidden = true; });
     $('#dataSheet').addEventListener('click', (e) => { if (e.target.id === 'dataSheet') e.target.hidden = true; });
     $('#btnExport').addEventListener('click', exportData);
     $('#btnSyncNow').addEventListener('click', () => { flushOutbox(); toast('Syncing…'); });
-    $('#macUrl').addEventListener('change', (e) => { state.config.syncUrl = e.target.value.trim(); WTStore.setConfig(state.config); toast('Sync URL saved'); flushOutbox(); });
+    $('#syncKey').addEventListener('change', (e) => { state.config.syncKey = e.target.value.trim(); WTStore.setConfig(state.config); toast('Sync key saved'); flushOutbox(); });
     $('#importFile').addEventListener('change', (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; });
 
     // rest timer controls

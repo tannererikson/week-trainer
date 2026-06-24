@@ -102,7 +102,7 @@
       </div>
 
       <div class="sheet-section">
-        <h3>Sync to Mac</h3>
+        <h3>Cloud sync</h3>
         <p class="sheet-note" id="syncPending">All sessions synced.</p>
         <button class="btn btn-primary block" id="btnSyncNow">Sync now</button>
       </div>
@@ -122,8 +122,8 @@
 
       <details class="sheet-section">
         <summary>Advanced</summary>
-        <label class="adv-label">Mac sync URL <span class="muted">(leave blank if the app is served by your Mac)</span>
-          <input type="text" id="macUrl" inputmode="url" placeholder="e.g. http://192.168.1.50:5055" />
+        <label class="adv-label">Sync key <span class="muted">(set once, so workouts sync to your Sheet)</span>
+          <input type="text" id="syncKey" autocomplete="off" autocapitalize="off" placeholder="enter your sync key" />
         </label>
       </details>
 
@@ -260,8 +260,13 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- public build: no Mac to sync to — Finish & Save just stores on this phone -->
-  <script>window.WT_PUBLIC = true;</script>
+  <!-- public build: Finish & Save stores on this phone AND syncs to the Google Sheet for Claude analysis -->
+  <script>
+    window.WT_PUBLIC = true;
+    // Endpoint is safe to ship (returns "bad key" without the secret). The key is entered
+    // once on the device (Tools → Advanced → Sync key) and lives only in local storage.
+    window.WT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbw-loIshdrQnU4K3p4hJRqNetz8pUlLVlE-32ZFzOrSu8hRf0ShJXPAGKFSIWWJ_xKm-g/exec';
+  </script>
   <script src="js/store.js" defer></script>
   <script src="js/program.js" defer></script>
   <script src="js/muscles.js" defer></script>
