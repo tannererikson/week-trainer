@@ -293,6 +293,9 @@ body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bo
 .note-input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
 .modal-actions { display: flex; gap: 10px; margin-top: 14px; }
 .modal-actions .btn { flex: 1; }
+.swap-sub { margin: 2px 0 10px; color: var(--muted); font-size: 0.85rem; }
+.modal-actions.swap-actions { flex-direction: column; }
+.modal-actions.swap-actions .btn { width: 100%; }
 
 /* ---------- full-screen detail (history) ---------- */
 .screen { position: fixed; inset: 0; z-index: 55; background: var(--bg); display: flex; flex-direction: column; }

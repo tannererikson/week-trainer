@@ -88,6 +88,7 @@
   <div class="rowmenu" id="rowMenu" hidden>
     <button data-act="up">Move up</button>
     <button data-act="down">Move down</button>
+    <button data-act="swap">Swap exercise</button>
     <button data-act="remove" class="danger">Remove lift</button>
   </div>
 
@@ -153,6 +154,20 @@
       <div class="modal-actions">
         <button class="btn btn-ghost" id="noteCancel">Cancel</button>
         <button class="btn btn-primary" id="noteSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Swap a lift for a different exercise (today only, or save as the new default) -->
+  <div class="modal-backdrop" id="swapModal" hidden>
+    <div class="modal" role="dialog" aria-label="Swap exercise">
+      <h2>Swap exercise</h2>
+      <p class="swap-sub" id="swapSub"></p>
+      <input type="text" id="swapInput" class="note-input" placeholder="New exercise name&hellip;" />
+      <div class="modal-actions swap-actions">
+        <button class="btn btn-primary" id="swapToday">Just today</button>
+        <button class="btn btn-ghost" id="swapDefault">Save as default</button>
+        <button class="btn btn-ghost" id="swapCancel">Cancel</button>
       </div>
     </div>
   </div>

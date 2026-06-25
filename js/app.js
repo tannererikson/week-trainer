@@ -167,7 +167,7 @@
 
   // ---------- session log handling ----------
   function newSession(dateKey, dayId) {
-    return { dateKey, dayId, exercises: {}, customExercises: [], order: {}, removed: [], warmupChecks: {}, cardio: { minutes: '', seconds: '', distance: '', done: false }, sessionNotes: '' };
+    return { dateKey, dayId, exercises: {}, customExercises: [], order: {}, removed: [], swaps: {}, warmupChecks: {}, cardio: { minutes: '', seconds: '', distance: '', done: false }, sessionNotes: '' };
   }
   function newExLog(ex) {
     const n = Math.max(1, ex.defaultSets || 1);
@@ -420,6 +420,69 @@
     closeNoteModal();
   }
 
+  // ---------- swap-exercise modal ----------
+  // Find a lift object on the active day by id (program lift or one of today's added lifts).
+  function findDayEx(exId) {
+    const day = currentDay();
+    for (const sec of (day.sections || [])) {
+      const f = (sec.exercises || []).find((e) => e.id === exId);
+      if (f) return { ex: f, custom: false };
+    }
+    const c = (state.log.customExercises || []).find((x) => x.id === exId);
+    return c ? { ex: c, custom: true } : null;
+  }
+  function openSwapModal(exId) {
+    const found = findDayEx(exId);
+    if (!found) return;
+    state.swapExId = exId;
+    const swapped = swapNameOf(exId);
+    $('#swapSub').textContent = swapped
+      ? 'Program lift: ' + found.ex.name + ' (swapped to ' + swapped + ' today)'
+      : 'Program lift: ' + found.ex.name;
+    $('#swapInput').value = displayName(found.ex);
+    // "Save as default" rewrites the program slot — only meaningful for program lifts.
+    $('#swapDefault').hidden = found.custom;
+    $('#swapModal').hidden = false;
+    setTimeout(() => { const i = $('#swapInput'); i.focus(); i.select(); }, 50);
+  }
+  function closeSwapModal() { $('#swapModal').hidden = true; state.swapExId = null; }
+  // Apply a swap that lasts only for today's session.
+  function swapToday() {
+    const id = state.swapExId; if (!id) { closeSwapModal(); return; }
+    const name = $('#swapInput').value.trim(); if (!name) return;
+    const found = findDayEx(id);
+    if (!state.log.swaps) state.log.swaps = {};
+    if (found && name === found.ex.name) delete state.log.swaps[id]; // back to the program name → clear the override
+    else state.log.swaps[id] = name;
+    save();
+    closeSwapModal();
+    if (!$('#liftScreen').hidden && state.liftEx && state.liftEx.id === id) {
+      $('#liftTitle').textContent = displayName(state.liftEx);
+      $('#liftHowTo').href = howToLink(displayName(state.liftEx));
+    }
+    renderWorkout();
+    toast(found && name === found.ex.name ? 'Swap cleared' : 'Swapped for today');
+  }
+  // Rename the program slot everywhere and persist it — the new default for every week.
+  function swapDefault() {
+    const id = state.swapExId; if (!id) { closeSwapModal(); return; }
+    const name = $('#swapInput').value.trim(); if (!name) return;
+    let changed = false;
+    state.program.days.forEach((d) => (d.sections || []).forEach((s) => (s.exercises || []).forEach((ex) => {
+      if (ex.id === id) { ex.name = name; changed = true; }
+    })));
+    if (state.log.swaps) delete state.log.swaps[id]; // default now matches → drop any today-only override
+    if (changed) { try { WTStore.setProgram(state.program); } catch (e) {} }
+    save();
+    closeSwapModal();
+    if (!$('#liftScreen').hidden && state.liftEx && state.liftEx.id === id) {
+      $('#liftTitle').textContent = displayName(state.liftEx);
+      $('#liftHowTo').href = howToLink(displayName(state.liftEx));
+    }
+    renderWorkout();
+    toast('Saved as default');
+  }
+
   // ---------- history & trends ----------
   // Resolve a logged exercise id to its display name (program slot, else custom name in that log).
   function exNameById(exId) {
@@ -431,6 +494,10 @@
     }
     return null;
   }
+  // Per-session swap: a name override for a lift, just for today's log (cleared if it equals the program name).
+  function swapNameOf(exId) { return (state.log && state.log.swaps && state.log.swaps[exId]) || null; }
+  // Name to show in the active session — a today-only swap wins over the program/custom name.
+  function displayName(ex) { return swapNameOf(ex.id) || ex.name; }
   // Epley estimated 1-rep-max, best across the day's sets.
   function bestOneRm(sets) {
     let best = 0;
@@ -448,7 +515,7 @@
       const customNames = {};
       (log.customExercises || []).forEach((c) => { customNames[c.id] = c.name; });
       Object.keys(log.exercises || {}).forEach((exId) => {
-        const name = customNames[exId] || exNameById(exId);
+        const name = (log.swaps && log.swaps[exId]) || customNames[exId] || exNameById(exId);
         if (!name || name.trim().toLowerCase() !== want) return;
         const sets = (log.exercises[exId].sets || [])
           .map((s) => ({ weight: parseFloat(s.weight), reps: parseFloat(s.reps) }))
@@ -461,11 +528,12 @@
   }
 
   async function openHistory(ex) {
-    state.histName = ex.name;
-    $('#histTitle').textContent = ex.name;
+    const nm = displayName(ex);
+    state.histName = nm;
+    $('#histTitle').textContent = nm;
     // make sure today's in-progress entries are persisted before we read them back
     try { await WTStore.setLog(state.dateKey, state.log); } catch (e) {}
-    state.histEntries = await gatherHistory(ex.name);
+    state.histEntries = await gatherHistory(nm);
     setHistTab('results');
     $('#histScreen').hidden = false;
   }
@@ -578,7 +646,7 @@
       h('div', { class: 'lift-tile' }, ex.caution ? '⚠️' : '🏋️', h('span', { class: 'lift-badge' }, '💪')),
       h('div', { class: 'lift-main' },
         isFocus(ex) ? h('div', { class: 'focus-label' }, 'FOCUS EXERCISE') : null,
-        h('div', { class: 'lift-name' }, ex.name),
+        h('div', { class: 'lift-name' }, displayName(ex)),
         h('div', { class: 'lift-sum' }, liftSummary(ex))
       ),
       h('div', { class: 'lift-right' },
@@ -636,8 +704,8 @@
   function openLift(section, ex) {
     state.liftSectionObj = section;
     state.liftEx = ex;
-    $('#liftTitle').textContent = ex.name;
-    $('#liftHowTo').href = howToLink(ex.name);
+    $('#liftTitle').textContent = displayName(ex);
+    $('#liftHowTo').href = howToLink(displayName(ex));
     $('#liftHero').style.backgroundImage = ex.image ? 'url("' + ex.image + '")' : '';
     renderLiftBody(section, ex);
     $('#liftScreen').hidden = false;
@@ -728,7 +796,7 @@
     const seq = dayLiftSequence();
     const idx = seq.findIndex((s) => s.ex.id === ex.id);
     const next = (idx >= 0 && idx < seq.length - 1) ? seq[idx + 1] : null;
-    if (next) body.appendChild(h('button', { class: 'btn btn-primary block lift-next', onclick: () => openLift(next.section, next.ex) }, 'Next: ' + next.ex.name + ' →'));
+    if (next) body.appendChild(h('button', { class: 'btn btn-primary block lift-next', onclick: () => openLift(next.section, next.ex) }, 'Next: ' + displayName(next.ex) + ' →'));
     else body.appendChild(h('button', { class: 'btn btn-ghost block lift-next', onclick: closeLift }, 'Back to workout'));
   }
   // ordered (section, ex) pairs for the current day — program order, then custom lifts.
@@ -1171,7 +1239,7 @@
         const e = log.exercises[exId];
         const setN = (e.sets || []).filter((s) => (s.weight !== '' && s.reps !== '') || s.done).length;
         if (!setN) return;
-        const name = exNameById(exId); if (!name) return;
+        const name = (log.swaps && log.swaps[exId]) || exNameById(exId); if (!name) return;
         if (!byName[name] || dk > byName[name].dateKey) byName[name] = { name, dateKey: dk, sets: setN };
       });
     });
@@ -1332,7 +1400,7 @@
   function logVolume(log) { let v = 0; Object.values(log.exercises || {}).forEach((e) => (e.sets || []).forEach((s) => { const w = parseFloat(s.weight), r = parseFloat(s.reps); if (!isNaN(w) && !isNaN(r)) v += w * r; })); return v; }
   function logExCount(log) { let n = 0; Object.values(log.exercises || {}).forEach((e) => { if ((e.sets || []).some((s) => (s.weight !== '' && s.reps !== '') || s.done)) n++; }); return n; }
   function dayTitle(dayId) { const d = state.program.days.find((x) => x.id === dayId); return d ? d.title : 'Workout'; }
-  function nameInLog(log, exId) { const c = (log.customExercises || []).find((x) => x.id === exId); return c ? c.name : exNameById(exId); }
+  function nameInLog(log, exId) { if (log.swaps && log.swaps[exId]) return log.swaps[exId]; const c = (log.customExercises || []).find((x) => x.id === exId); return c ? c.name : exNameById(exId); }
 
   function inWeek(dk, weekStart) { const dt = parseKey(dk); return dt >= weekStart && dt <= addDays(weekStart, 6); }
   function computeWeekStreak(set) {
@@ -1440,7 +1508,7 @@
     // ordered exercises (program order, then customs), with filled sets only
     const day = state.program.days.find((d) => d.id === log.dayId);
     const ordered = [];
-    (day ? day.sections || [] : []).forEach((sec) => (sec.exercises || []).forEach((ex) => { if (log.exercises[ex.id]) ordered.push({ id: ex.id, name: ex.name, focus: ex.focus }); }));
+    (day ? day.sections || [] : []).forEach((sec) => (sec.exercises || []).forEach((ex) => { if (log.exercises[ex.id]) ordered.push({ id: ex.id, name: nameInLog(log, ex.id), focus: ex.focus }); }));
     (log.customExercises || []).forEach((c) => { if (log.exercises[c.id]) ordered.push({ id: c.id, name: c.name }); });
     const withSets = ordered.map((ex) => {
       const e = log.exercises[ex.id];
@@ -1534,7 +1602,7 @@
         const e = state.log.exercises[ex.id]; if (!e) return;
         const setStrs = e.sets.filter((s) => s.weight !== '' && s.reps !== '').map((s) => s.weight + ' x ' + s.reps);
         if (!setStrs.length && !e.note) return;
-        block.push('• ' + ex.name + ': ' + (setStrs.length ? setStrs.join(', ') : '—'));
+        block.push('• ' + displayName(ex) + ': ' + (setStrs.length ? setStrs.join(', ') : '—'));
         if (e.note) block.push('   note: ' + e.note);
       });
       if (block.length) { lines.push('', section.label.toUpperCase()); block.forEach((b) => lines.push(b)); }
@@ -1755,6 +1823,12 @@
     $('#noteSave').addEventListener('click', saveNote);
     $('#noteModal').addEventListener('click', (e) => { if (e.target.id === 'noteModal') closeNoteModal(); });
 
+    // swap-exercise modal
+    $('#swapCancel').addEventListener('click', closeSwapModal);
+    $('#swapToday').addEventListener('click', swapToday);
+    $('#swapDefault').addEventListener('click', swapDefault);
+    $('#swapModal').addEventListener('click', (e) => { if (e.target.id === 'swapModal') closeSwapModal(); });
+
     // history screen
     $('#histBack').addEventListener('click', () => { $('#histScreen').hidden = true; });
     $('#histTabs').addEventListener('click', (e) => { const b = e.target.closest('.seg-btn'); if (b) setHistTab(b.dataset.tab); });
@@ -1791,6 +1865,7 @@
       if (!c) return;
       if (b.dataset.act === 'up') move(c.sectionId, c.exId, -1);
       else if (b.dataset.act === 'down') move(c.sectionId, c.exId, 1);
+      else if (b.dataset.act === 'swap') openSwapModal(c.exId);
       else if (b.dataset.act === 'remove') { if (c.custom) removeCustom(c.exId); else removeForToday(c.exId); }
     });
     document.addEventListener('click', (e) => {
