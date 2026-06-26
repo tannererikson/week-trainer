@@ -250,7 +250,7 @@ input, textarea, button { font: inherit; color: inherit; }
 .setbox.kp-active { outline: 2px solid var(--accent); border-color: var(--accent); }
 /* while the keypad is up, pad the lift body so the active set scrolls clear of it */
 /* keypad is taller than the rest bar — its spacing must win even while resting, or the active set hides under it */
-body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bottom)) !important; }
+body.keypadding .lift-body { padding-bottom: var(--dock-pad, calc(400px + env(safe-area-inset-bottom))) !important; }
 
 /* ---------- Rate Your Last Set (RIR) ---------- */
 .ratesheet {
@@ -394,7 +394,7 @@ body.scroll-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: 
 .lift-howto { align-self: flex-start; background: rgba(255,255,255,0.08); border: 1px solid var(--line); color: var(--text); border-radius: 999px; padding: 9px 18px; font-weight: 700; font-size: 0.9rem; }
 .lift-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
 /* while a rest timer is docked, pad the bottom so you can still scroll your sets above the rest bar */
-body.resting .lift-body { padding-bottom: calc(220px + env(safe-area-inset-bottom)); }
+body.resting .lift-body { padding-bottom: var(--dock-pad, calc(248px + env(safe-area-inset-bottom))); }
 .lift-body::-webkit-scrollbar { display: none; }
 .lift-body { scrollbar-width: none; }
 /* never let a child (esp. the scrollable chips row) collapse when content overflows — it must scroll, not shrink */

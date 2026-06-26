@@ -256,6 +256,7 @@
     $('#restPause').innerHTML = '&#10073;&#10073;';
     $('#restBar').hidden = false;
     document.body.classList.add('resting'); // pads the lift body so sets clear the docked bar
+    updateDockPad();
     clearInterval(restInterval);
     restInterval = setInterval(tickRest, 200);
     tickRest();
@@ -293,6 +294,7 @@
     $('#restBar').hidden = true;
     $('#restBar').classList.remove('done');
     document.body.classList.remove('resting');
+    updateDockPad();
   }
   function onRestDone() {
     buzz(); beep();
@@ -332,6 +334,17 @@
   // ---------- custom numeric keypad (replaces the iOS keyboard for set entry) ----------
   // kp = { input, set, field ('weight'|'reps'), repsInput, complete } while a box is active.
   let kp = null;
+  // Reserve exactly enough scroll room at the bottom of the lift body for whatever bar
+  // is docked (keypad wins over the rest bar — it's taller), measured live so a tall
+  // home-bar inset or a bigger keypad can't clip the last set. Falls back to the CSS default.
+  function updateDockPad() {
+    const kpEl = $('#keypad'), rb = $('#restBar');
+    let h = 0;
+    if (document.body.classList.contains('keypadding') && kpEl && !kpEl.hidden) h = kpEl.offsetHeight;
+    else if (document.body.classList.contains('resting') && rb && !rb.hidden) h = rb.offsetHeight;
+    if (h) document.body.style.setProperty('--dock-pad', (h + 16) + 'px');
+    else document.body.style.removeProperty('--dock-pad');
+  }
   function openKeypad(ctx) {
     kp = ctx;
     document.querySelectorAll('.setbox.kp-active').forEach((el) => el.classList.remove('kp-active'));
@@ -341,6 +354,7 @@
     $('#kpDot').classList.toggle('disabled', ctx.field !== 'weight'); // decimals only make sense on weight
     $('#keypad').hidden = false;
     document.body.classList.add('keypadding');
+    updateDockPad();
     // lift the active row clear of the keypad. double-rAF so the keypadding bottom-padding has
     // reflowed (giving room to scroll) before we measure + scroll.
     requestAnimationFrame(() => requestAnimationFrame(liftActiveBoxAboveKeypad));
@@ -362,6 +376,7 @@
     kp = null;
     $('#keypad').hidden = true;
     document.body.classList.remove('keypadding');
+    updateDockPad(); // fall back to the rest bar's height if it's still docked, else clear
   }
   function keypadPress(key) {
     if (!kp) return;
