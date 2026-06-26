@@ -438,6 +438,24 @@
     const m = window.WT_MUSCLES && window.WT_MUSCLES.MUSCLES[key];
     return m ? m.name : key;
   }
+  // Resolve a lift to its library record for the demo gif: explicit lift→library
+  // binding (js/lift-library-map.js) first, else the lift's own name. Null if none.
+  function liftLibRecord(ex) {
+    const byName = window.WT_LIBRARY_BY_NAME; if (!byName || !ex) return null;
+    const nm = displayName(ex);
+    const mapped = window.WT_LIFT_LIB && window.WT_LIFT_LIB[nm.toLowerCase()];
+    return byName[(mapped || nm).toLowerCase()] || null;
+  }
+  function liftHeroImg(ex) {
+    if (ex && ex.image) return ex.image;
+    const r = liftLibRecord(ex);
+    return r && r.img ? r.img : '';
+  }
+  function setLiftHero(ex) {
+    const img = liftHeroImg(ex);
+    $('#liftHero').style.backgroundImage = img ? 'url("' + img + '")' : '';
+    $('#liftHero').classList.toggle('has-demo', !!img);
+  }
   // Add a lift to today's "Added lifts" — auto-tags muscles from the library when the name matches.
   function addCustomLift(name) {
     name = (name || '').trim();
@@ -624,6 +642,7 @@
     if (!$('#liftScreen').hidden && state.liftEx && state.liftEx.id === id) {
       $('#liftTitle').textContent = displayName(state.liftEx);
       $('#liftHowTo').href = howToLink(displayName(state.liftEx));
+      setLiftHero(state.liftEx);
     }
     renderWorkout();
     toast(asDefault ? 'Saved as default' : (found && name === found.ex.name ? 'Swap cleared' : 'Swapped to ' + name));
@@ -844,7 +863,7 @@
     state.liftEx = ex;
     $('#liftTitle').textContent = displayName(ex);
     $('#liftHowTo').href = howToLink(displayName(ex));
-    $('#liftHero').style.backgroundImage = ex.image ? 'url("' + ex.image + '")' : '';
+    setLiftHero(ex);
     renderLiftBody(section, ex);
     $('#liftScreen').hidden = false;
   }
