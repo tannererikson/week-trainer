@@ -183,24 +183,11 @@
     </div>
   </div>
 
-  <!-- Swap a lift for a different exercise (today only, or save as the new default) -->
-  <div class="modal-backdrop" id="swapModal" hidden>
-    <div class="modal" role="dialog" aria-label="Swap exercise">
-      <h2>Swap exercise</h2>
-      <p class="swap-sub" id="swapSub"></p>
-      <input type="text" id="swapInput" class="note-input" list="liftSuggest" placeholder="New exercise name&hellip;" />
-      <div class="modal-actions swap-actions">
-        <button class="btn btn-primary" id="swapToday">Just today</button>
-        <button class="btn btn-ghost" id="swapDefault">Save as default</button>
-        <button class="btn btn-ghost" id="swapCancel">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search/browse the merged exercise library to add a lift -->
+  <!-- Search/browse the merged exercise library to add or replace a lift -->
   <div class="modal-backdrop" id="libModal" hidden>
     <div class="modal lib-modal" role="dialog" aria-label="Add a lift">
-      <h2>Add a lift</h2>
+      <h2 id="libTitle">Add a lift</h2>
+      <div class="lib-mode" id="libMode" hidden></div>
       <input type="search" id="libSearch" class="note-input" placeholder="Search lifts&hellip;" autocomplete="off" autocapitalize="none" />
       <div class="lib-filters" id="libFilters"></div>
       <div class="lib-results" id="libResults"></div>
@@ -323,7 +310,5 @@
   <script src="js/muscles.js" defer></script>
   <script src="js/exercise-library.js" defer></script>
   <script src="js/app.js" defer></script>
-  <!-- typeahead source for swap + add-lift inputs, populated from WT_LIBRARY -->
-  <datalist id="liftSuggest"></datalist>
 </body>
 </html>

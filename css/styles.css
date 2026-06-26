@@ -302,8 +302,13 @@ body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bo
 .modal-actions.swap-actions { flex-direction: column; }
 .modal-actions.swap-actions .btn { width: 100%; }
 
-/* ---------- add-lift library picker ---------- */
+/* ---------- add/replace library picker ---------- */
 .lib-modal { max-width: 460px; max-height: 86vh; display: flex; flex-direction: column; }
+.lib-modal h2 { text-align: left; }
+.lib-mode { display: flex; gap: 6px; margin: 0 0 10px; }
+.lib-mode[hidden] { display: none; }
+.lib-seg { flex: 1; padding: 7px; border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: .85rem; }
+.lib-seg.on { background: var(--card-2); border-color: var(--accent); color: var(--text); }
 .lib-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .lib-chip { font-size: .8rem; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
 .lib-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }

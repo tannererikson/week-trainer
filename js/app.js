@@ -428,19 +428,6 @@
   }
 
   // ---------- exercise library (merged free datasets: free-exercise-db + ExerciseDB) ----------
-  // Fills the shared <datalist> so the swap + add-lift inputs get native typeahead. Called once at init.
-  function populateLiftSuggest() {
-    const dl = document.getElementById('liftSuggest');
-    if (!dl || !window.WT_LIBRARY || dl.childElementCount) return;
-    const frag = document.createDocumentFragment();
-    window.WT_LIBRARY.forEach((r) => {
-      const o = document.createElement('option');
-      o.value = r.name;
-      if (r.equipment) o.label = r.equipment; // shown as a hint in some browsers
-      frag.appendChild(o);
-    });
-    dl.appendChild(frag);
-  }
   // Look up a lift name in the merged library -> { primary, secondary } muscle keys, or null.
   // Lets an added lift credit the right muscles in the Recovery heatmap / Targets without manual tagging.
   function libMuscles(name) {
@@ -463,41 +450,79 @@
     toast('Added ' + name);
   }
 
-  // ---------- add-lift library picker (search + filter the 2,300-lift library) ----------
-  const libState = { q: '', filter: 'all' };
-  const LIB_FILTERS = [
+  // ---------- library picker (search + filter the 2,300-lift library; add OR replace) ----------
+  // mode 'add'     -> tap adds a new "Added lift"
+  // mode 'replace' -> tap swaps the targeted lift; seeded with its muscle(s) for Best matches
+  const libState = { q: '', filter: 'all', mode: 'add', exId: null, curName: '', seed: [], allowDefault: false, asDefault: false };
+  const EQUIP_FILTERS = [
     ['all', 'All'], ['mine', 'My gym'], ['machine', 'Machine'], ['smith machine', 'Smith'],
     ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'],
     ['bodyweight', 'Bodyweight'], ['kettlebell', 'Kettlebell'], ['band', 'Band']
   ];
   const LIB_MAX = 60; // cap rendered rows; the search box narrows from there
-  function openLibModal() {
-    libState.q = ''; libState.filter = 'all';
+  function openPicker(opts) {
+    opts = opts || {};
+    libState.mode = opts.mode || 'add';
+    libState.exId = opts.exId || null;
+    libState.curName = opts.curName || '';
+    libState.seed = opts.seed || [];
+    libState.allowDefault = !!opts.allowDefault;
+    libState.asDefault = false;
+    libState.q = '';
+    libState.filter = (libState.mode === 'replace' && libState.seed.length) ? 'best' : 'all';
+    $('#libTitle').textContent = libState.mode === 'replace' ? ('Replace ' + libState.curName) : 'Add a lift';
     const s = $('#libSearch'); if (s) s.value = '';
-    renderLibFilters(); renderLibResults();
+    renderLibMode(); renderLibFilters(); renderLibResults();
     $('#libModal').hidden = false;
     setTimeout(() => { const i = $('#libSearch'); if (i) i.focus(); }, 50);
   }
+  function openLibModal() { openPicker({ mode: 'add' }); }
   function closeLibModal() { $('#libModal').hidden = true; }
+  // today-vs-default segmented control (replace mode only, and only for program lifts)
+  function renderLibMode() {
+    const wrap = $('#libMode'); if (!wrap) return;
+    wrap.textContent = '';
+    if (libState.mode !== 'replace' || !libState.allowDefault) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    [[false, 'Just today'], [true, 'Save as default']].forEach(([val, label]) => wrap.appendChild(
+      h('button', { class: 'lib-seg' + (libState.asDefault === val ? ' on' : ''),
+        onclick: () => { libState.asDefault = val; renderLibMode(); } }, label)
+    ));
+  }
+  function libChips() {
+    return (libState.mode === 'replace' && libState.seed.length)
+      ? [['best', 'Best matches']].concat(EQUIP_FILTERS) : EQUIP_FILTERS;
+  }
   function renderLibFilters() {
     const wrap = $('#libFilters'); if (!wrap) return;
     wrap.textContent = '';
-    LIB_FILTERS.forEach(([val, label]) => wrap.appendChild(
+    libChips().forEach(([val, label]) => wrap.appendChild(
       h('button', { class: 'lib-chip' + (libState.filter === val ? ' on' : ''),
         onclick: () => { libState.filter = val; renderLibFilters(); renderLibResults(); } }, label)
     ));
   }
   function libMatch(r) {
-    if (libState.filter === 'mine') { if (!r.mine) return false; }
+    // never offer the lift we're replacing as its own replacement
+    if (libState.mode === 'replace' && libState.curName && r.name.toLowerCase() === libState.curName.toLowerCase()) return false;
+    if (libState.filter === 'best') { if (!libState.seed.some((m) => r.primary.indexOf(m) !== -1)) return false; }
+    else if (libState.filter === 'mine') { if (!r.mine) return false; }
     else if (libState.filter !== 'all') { if (r.equipment !== libState.filter) return false; }
     return !libState.q || r.name.toLowerCase().indexOf(libState.q) !== -1;
+  }
+  function pick(name) {
+    if (libState.mode === 'replace') applySwap(name, libState.asDefault);
+    else addCustomLift(name);
+    closeLibModal();
   }
   function renderLibResults() {
     const box = $('#libResults'); if (!box || !window.WT_LIBRARY) return;
     box.textContent = '';
-    const q = libState.q;
+    const q = libState.q, best = libState.filter === 'best', seed = libState.seed;
     const hits = window.WT_LIBRARY.filter(libMatch);
     hits.sort((a, b) => {
+      if (best) { const sa = seed.filter((m) => a.primary.indexOf(m) !== -1).length,
+                        sb = seed.filter((m) => b.primary.indexOf(m) !== -1).length;
+        if (sa !== sb) return sb - sa; }                          // most muscle overlap first
       if (!!b.mine !== !!a.mine) return b.mine ? 1 : -1;          // my-gym lifts first
       if (q) { const as = a.name.toLowerCase().startsWith(q), bs = b.name.toLowerCase().startsWith(q);
         if (as !== bs) return as ? -1 : 1; }                      // prefix matches before substring
@@ -508,7 +533,7 @@
     } else {
       hits.slice(0, LIB_MAX).forEach((r) => {
         const meta = [r.equipment].concat(r.primary.map(muscleName)).filter(Boolean).join(' · ');
-        box.appendChild(h('button', { class: 'lib-row', onclick: () => { addCustomLift(r.name); closeLibModal(); } },
+        box.appendChild(h('button', { class: 'lib-row', onclick: () => pick(r.name) },
           h('span', { class: 'lib-row-name' }, r.name + (r.mine ? ' ★' : '')),
           h('span', { class: 'lib-row-meta' }, meta)));
       });
@@ -516,11 +541,17 @@
         ? ('Showing ' + LIB_MAX + ' of ' + hits.length + ' — keep typing to narrow')
         : (hits.length + ' lift' + (hits.length === 1 ? '' : 's'))));
     }
-    // let a name that isn't in the library still be added as a free-text custom lift
+    // Best-matches view: a tap-through to the whole database (Fitbod's "See all exercises")
+    if (best) {
+      box.appendChild(h('button', { class: 'lib-row lib-row-custom',
+        onclick: () => { libState.filter = 'all'; renderLibFilters(); renderLibResults(); } },
+        h('span', { class: 'lib-row-name' }, 'See all exercises →')));
+    }
+    // a name that isn't in the library can still be added/used as a free-text lift
     if (q && !hits.some((r) => r.name.toLowerCase() === q)) {
       const raw = ($('#libSearch').value || '').trim();
-      box.appendChild(h('button', { class: 'lib-row lib-row-custom', onclick: () => { addCustomLift(raw); closeLibModal(); } },
-        h('span', { class: 'lib-row-name' }, 'Add “' + raw + '” as a custom lift')));
+      box.appendChild(h('button', { class: 'lib-row lib-row-custom', onclick: () => pick(raw) },
+        h('span', { class: 'lib-row-name' }, (libState.mode === 'replace' ? 'Use “' : 'Add “') + raw + (libState.mode === 'replace' ? '”' : '” as a custom lift'))));
     }
   }
 
@@ -535,56 +566,40 @@
     const c = (state.log.customExercises || []).find((x) => x.id === exId);
     return c ? { ex: c, custom: true } : null;
   }
+  // Swap = open the library picker in "replace" mode, seeded with the lift's muscle(s)
+  // so the Best-matches list shows relevant alternates first (Fitbod-style).
   function openSwapModal(exId) {
     const found = findDayEx(exId);
     if (!found) return;
-    state.swapExId = exId;
-    const swapped = swapNameOf(exId);
-    $('#swapSub').textContent = swapped
-      ? 'Program lift: ' + found.ex.name + ' (swapped to ' + swapped + ' today)'
-      : 'Program lift: ' + found.ex.name;
-    $('#swapInput').value = displayName(found.ex);
-    // "Save as default" rewrites the program slot — only meaningful for program lifts.
-    $('#swapDefault').hidden = found.custom;
-    $('#swapModal').hidden = false;
-    setTimeout(() => { const i = $('#swapInput'); i.focus(); i.select(); }, 50);
+    const lm = libMuscles(found.ex.name);
+    const seed = (found.ex.muscles && found.ex.muscles.primary) || (lm && lm.primary) || [];
+    openPicker({ mode: 'replace', exId, curName: displayName(found.ex), seed, allowDefault: !found.custom });
   }
-  function closeSwapModal() { $('#swapModal').hidden = true; state.swapExId = null; }
-  // Apply a swap that lasts only for today's session.
-  function swapToday() {
-    const id = state.swapExId; if (!id) { closeSwapModal(); return; }
-    const name = $('#swapInput').value.trim(); if (!name) return;
+  // Apply a chosen replacement. asDefault=true rewrites the program slot for every week;
+  // otherwise it's a today-only swap (re-picking the original name clears the override).
+  function applySwap(name, asDefault) {
+    const id = libState.exId; if (!id) return;
+    name = (name || '').trim(); if (!name) return;
     const found = findDayEx(id);
-    if (!state.log.swaps) state.log.swaps = {};
-    if (found && name === found.ex.name) delete state.log.swaps[id]; // back to the program name → clear the override
-    else state.log.swaps[id] = name;
+    if (asDefault) {
+      let changed = false;
+      state.program.days.forEach((d) => (d.sections || []).forEach((s) => (s.exercises || []).forEach((ex) => {
+        if (ex.id === id) { ex.name = name; changed = true; }
+      })));
+      if (state.log.swaps) delete state.log.swaps[id];
+      if (changed) { try { WTStore.setProgram(state.program); } catch (e) {} }
+    } else {
+      if (!state.log.swaps) state.log.swaps = {};
+      if (found && name === found.ex.name) delete state.log.swaps[id]; // back to original → clear override
+      else state.log.swaps[id] = name;
+    }
     save();
-    closeSwapModal();
     if (!$('#liftScreen').hidden && state.liftEx && state.liftEx.id === id) {
       $('#liftTitle').textContent = displayName(state.liftEx);
       $('#liftHowTo').href = howToLink(displayName(state.liftEx));
     }
     renderWorkout();
-    toast(found && name === found.ex.name ? 'Swap cleared' : 'Swapped for today');
-  }
-  // Rename the program slot everywhere and persist it — the new default for every week.
-  function swapDefault() {
-    const id = state.swapExId; if (!id) { closeSwapModal(); return; }
-    const name = $('#swapInput').value.trim(); if (!name) return;
-    let changed = false;
-    state.program.days.forEach((d) => (d.sections || []).forEach((s) => (s.exercises || []).forEach((ex) => {
-      if (ex.id === id) { ex.name = name; changed = true; }
-    })));
-    if (state.log.swaps) delete state.log.swaps[id]; // default now matches → drop any today-only override
-    if (changed) { try { WTStore.setProgram(state.program); } catch (e) {} }
-    save();
-    closeSwapModal();
-    if (!$('#liftScreen').hidden && state.liftEx && state.liftEx.id === id) {
-      $('#liftTitle').textContent = displayName(state.liftEx);
-      $('#liftHowTo').href = howToLink(displayName(state.liftEx));
-    }
-    renderWorkout();
-    toast('Saved as default');
+    toast(asDefault ? 'Saved as default' : (found && name === found.ex.name ? 'Swap cleared' : 'Swapped to ' + name));
   }
 
   // ---------- history & trends ----------
@@ -1943,8 +1958,7 @@
     state.config = await WTStore.getConfig();
     state.body = await WTStore.getBody();
     state.targets = await WTStore.getTargets();
-    populateLiftSuggest(); // wire the merged exercise library into the swap typeahead
-    // add-lift library picker
+    // library picker (add + replace)
     $('#libSearch').addEventListener('input', (e) => { libState.q = e.target.value.trim().toLowerCase(); renderLibResults(); });
     $('#libClose').addEventListener('click', closeLibModal);
     $('#libModal').addEventListener('click', (e) => { if (e.target.id === 'libModal') closeLibModal(); });
@@ -2010,10 +2024,6 @@
     $('#askModal').addEventListener('click', (e) => { if (e.target.id === 'askModal') $('#askModal').hidden = true; });
 
     // swap-exercise modal
-    $('#swapCancel').addEventListener('click', closeSwapModal);
-    $('#swapToday').addEventListener('click', swapToday);
-    $('#swapDefault').addEventListener('click', swapDefault);
-    $('#swapModal').addEventListener('click', (e) => { if (e.target.id === 'swapModal') closeSwapModal(); });
 
     // history screen
     $('#histBack').addEventListener('click', () => { $('#histScreen').hidden = true; });
