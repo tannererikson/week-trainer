@@ -22,6 +22,8 @@ window.WT_LIFT_LIB = {
   'leg extension': 'Lever Leg Extension',
   'machine triceps press': 'Machine Triceps Extension',
   'neutral-grip lat pulldown': 'Close-Grip Front Lat Pulldown',
+  'pendulum squat': 'Hack squat',  // no pendulum-squat demo in the DB; hack squat machine is closest
+
   'reverse pec deck': 'Dumbbell Reverse Fly',
   'rope pushdown': 'Triceps Pushdown - Rope Attachment',
   'seated cable row': 'Cable Seated Row'
