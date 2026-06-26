@@ -341,14 +341,21 @@
     $('#kpDot').classList.toggle('disabled', ctx.field !== 'weight'); // decimals only make sense on weight
     $('#keypad').hidden = false;
     document.body.classList.add('keypadding');
-    // lift the active row up so it clears the keypad (centering would still land behind it)
-    requestAnimationFrame(() => {
-      const lb = $('#liftBody'), pad = $('#keypad');
-      if (!lb || !pad) return;
-      const keypadTop = window.innerHeight - pad.offsetHeight;
-      const delta = ctx.input.getBoundingClientRect().bottom - (keypadTop - 16);
-      if (delta > 0) lb.scrollTop += delta; // instant, so there's no visible scroll/zoom motion
-    });
+    // lift the active row clear of the keypad. double-rAF so the keypadding bottom-padding has
+    // reflowed (giving room to scroll) before we measure + scroll.
+    requestAnimationFrame(() => requestAnimationFrame(liftActiveBoxAboveKeypad));
+  }
+  // If the active set box sits under (or near) the bottom keypad, scroll the lift body so the box
+  // parks ~a third down from the top — guaranteed clear of the keypad whatever its height.
+  function liftActiveBoxAboveKeypad() {
+    const lb = $('#liftBody'), pad = $('#keypad');
+    if (!lb || !pad || !kp || !kp.input) return;
+    const lbRect = lb.getBoundingClientRect();
+    const inRect = kp.input.getBoundingClientRect();
+    const keypadTop = window.innerHeight - pad.offsetHeight;
+    if (inRect.bottom < keypadTop - 24) return; // already comfortably visible — leave it
+    const target = lbRect.top + Math.min(150, lbRect.height * 0.30);
+    lb.scrollTop += inRect.top - target; // instant; no visible scroll/zoom motion
   }
   function closeKeypad() {
     if (kp && kp.input) kp.input.classList.remove('kp-active');

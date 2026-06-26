@@ -1,6 +1,6 @@
 /* Week Trainer service worker — network-first so updates land immediately (offline falls
    back to cache). Bump CACHE when shell files change. */
-const CACHE = 'week-trainer-public-v14';
+const CACHE = 'week-trainer-public-v15';
 const SHELL = [
   './',
   './index.html',
