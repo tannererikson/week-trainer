@@ -169,6 +169,20 @@
     </div>
   </div>
 
+  <!-- Per-lift form help: ask Claude how to fix the feel/form on this lift -->
+  <div class="modal-backdrop" id="askModal" hidden>
+    <div class="modal" role="dialog" aria-label="Form help">
+      <h2 id="askTitle">Form help</h2>
+      <p class="swap-sub" id="askSub"></p>
+      <textarea id="askInput" class="note-input" rows="3" placeholder="What's off? e.g. I feel this in my shoulders, not my chest"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="askCancel">Close</button>
+        <button class="btn btn-primary" id="askSend">Ask</button>
+      </div>
+      <div id="askBody" class="coach-body"></div>
+    </div>
+  </div>
+
   <!-- Swap a lift for a different exercise (today only, or save as the new default) -->
   <div class="modal-backdrop" id="swapModal" hidden>
     <div class="modal" role="dialog" aria-label="Swap exercise">

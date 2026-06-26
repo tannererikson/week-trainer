@@ -770,7 +770,8 @@
     const restChip = h('button', { class: 'lift-chip' + (restOn ? '' : ' off'), onclick: () => openRestPicker(ex) }, '⏱ ' + fmtClock(restSecFor(ex.id)) + (restOn ? ' rest' : ' off'));
     const histChip = h('button', { class: 'lift-chip', onclick: () => openHistory(ex) }, '📈 History');
     const noteChip = h('button', { class: 'lift-chip' + (e.note ? ' has-note' : ''), onclick: () => openNoteModal(ex) }, e.note ? '📝 Note ●' : '📝 Note');
-    body.appendChild(h('div', { class: 'lift-chips' }, restChip, histChip, noteChip));
+    const askChip = h('button', { class: 'lift-chip', onclick: () => openLiftAsk(ex) }, '🎯 Form help');
+    body.appendChild(h('div', { class: 'lift-chips' }, restChip, histChip, noteChip, askChip));
 
     if (isFocus(ex)) body.appendChild(h('div', { class: 'focus-panel' },
       h('div', { class: 'focus-burst' }, '✷'),
@@ -1713,19 +1714,49 @@
       const url = window.WT_SYNC_URL + '?action=coach&key=' + encodeURIComponent(key) + '&session=' + session;
       const res = await fetch(url);
       const data = await res.json();
-      if (data && data.tips) renderCoachTips(data.tips);
+      if (data && data.tips) renderTips(body, data.tips);
       else body.textContent = 'Coach error: ' + (data && data.error ? data.error : 'no tips returned');
     } catch (err) {
       body.textContent = 'Could not reach the coach. Check your connection and try again.';
     }
   }
-  // Render the coach text as simple bullet/paragraph lines.
-  function renderCoachTips(text) {
-    const body = $('#coachBody'); body.innerHTML = '';
+  // Render coach/ask text as simple bullet/paragraph lines into a target element.
+  function renderTips(el, text) {
+    el.innerHTML = '';
     String(text).split('\n').map((l) => l.trim()).filter(Boolean).forEach((line) => {
       const bullet = /^[-•*]/.test(line);
-      body.appendChild(h('p', { class: bullet ? 'coach-bullet' : 'coach-line' }, line.replace(/^[-•*]\s*/, '')));
+      el.appendChild(h('p', { class: bullet ? 'coach-bullet' : 'coach-line' }, line.replace(/^[-•*#]+\s*/, '').replace(/\*\*/g, '')));
     });
+  }
+
+  // ---------- per-lift "Form help": ask Claude how to fix feel/form on THIS lift ----------
+  function openLiftAsk(ex) {
+    state.askEx = ex;
+    $('#askTitle').textContent = displayName(ex);
+    const t = ex.targetMuscle && ex.targetMuscle.label;
+    $('#askSub').textContent = t ? ('Should hit: ' + t) : '';
+    $('#askInput').value = '';
+    $('#askBody').innerHTML = '';
+    $('#askModal').hidden = false;
+    setTimeout(() => $('#askInput').focus(), 50);
+  }
+  async function sendLiftAsk() {
+    const ex = state.askEx; if (!ex) return;
+    const text = $('#askInput').value.trim(); if (!text) return;
+    const key = state.config && state.config.syncKey;
+    const body = $('#askBody');
+    if (!window.WT_SYNC_URL || !key) { body.textContent = 'Set your Sync key first (⚙ Tools → Advanced).'; return; }
+    body.innerHTML = '<p class="muted">Thinking…</p>';
+    const t = (ex.targetMuscle && ex.targetMuscle.label) || '';
+    const q = 'A lifter is mid-set on "' + displayName(ex) + '"' + (t ? ' (should target: ' + t + ')' : '') +
+      '. They say: "' + text + '". Give 3-4 short, specific form cues to fix it and feel it in the right muscle. Bullet points, no preamble, no fluff.';
+    try {
+      const url = window.WT_SYNC_URL + '?action=ask&key=' + encodeURIComponent(key) + '&q=' + encodeURIComponent(q);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.tips) renderTips(body, data.tips);
+      else body.textContent = 'Error: ' + (data && data.error ? data.error : 'no response — make sure the Apps Script is redeployed');
+    } catch (err) { body.textContent = 'Could not reach the coach. Check your connection.'; }
   }
 
   async function finishAndSave() {
@@ -1871,6 +1902,11 @@
     // coach modal
     $('#coachClose').addEventListener('click', () => { $('#coachModal').hidden = true; });
     $('#coachModal').addEventListener('click', (e) => { if (e.target.id === 'coachModal') $('#coachModal').hidden = true; });
+
+    // per-lift form-help modal
+    $('#askCancel').addEventListener('click', () => { $('#askModal').hidden = true; });
+    $('#askSend').addEventListener('click', sendLiftAsk);
+    $('#askModal').addEventListener('click', (e) => { if (e.target.id === 'askModal') $('#askModal').hidden = true; });
 
     // swap-exercise modal
     $('#swapCancel').addEventListener('click', closeSwapModal);
