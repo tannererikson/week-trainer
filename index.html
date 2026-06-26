@@ -188,7 +188,7 @@
     <div class="modal" role="dialog" aria-label="Swap exercise">
       <h2>Swap exercise</h2>
       <p class="swap-sub" id="swapSub"></p>
-      <input type="text" id="swapInput" class="note-input" placeholder="New exercise name&hellip;" />
+      <input type="text" id="swapInput" class="note-input" list="liftSuggest" placeholder="New exercise name&hellip;" />
       <div class="modal-actions swap-actions">
         <button class="btn btn-primary" id="swapToday">Just today</button>
         <button class="btn btn-ghost" id="swapDefault">Save as default</button>
@@ -310,6 +310,9 @@
   <script src="js/store.js" defer></script>
   <script src="js/program.js" defer></script>
   <script src="js/muscles.js" defer></script>
+  <script src="js/exercise-library.js" defer></script>
   <script src="js/app.js" defer></script>
+  <!-- typeahead source for swap + add-lift inputs, populated from WT_LIBRARY -->
+  <datalist id="liftSuggest"></datalist>
 </body>
 </html>

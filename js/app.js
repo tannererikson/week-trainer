@@ -427,6 +427,27 @@
     closeNoteModal();
   }
 
+  // ---------- exercise library (merged free datasets: free-exercise-db + ExerciseDB) ----------
+  // Fills the shared <datalist> so the swap + add-lift inputs get native typeahead. Called once at init.
+  function populateLiftSuggest() {
+    const dl = document.getElementById('liftSuggest');
+    if (!dl || !window.WT_LIBRARY || dl.childElementCount) return;
+    const frag = document.createDocumentFragment();
+    window.WT_LIBRARY.forEach((r) => {
+      const o = document.createElement('option');
+      o.value = r.name;
+      if (r.equipment) o.label = r.equipment; // shown as a hint in some browsers
+      frag.appendChild(o);
+    });
+    dl.appendChild(frag);
+  }
+  // Look up a lift name in the merged library -> { primary, secondary } muscle keys, or null.
+  // Lets an added lift credit the right muscles in the Recovery heatmap / Targets without manual tagging.
+  function libMuscles(name) {
+    const r = window.WT_LIBRARY_BY_NAME && window.WT_LIBRARY_BY_NAME[(name || '').trim().toLowerCase()];
+    return r ? { primary: r.primary || [], secondary: r.secondary || [] } : null;
+  }
+
   // ---------- swap-exercise modal ----------
   // Find a lift object on the active day by id (program lift or one of today's added lifts).
   function findDayEx(exId) {
@@ -691,12 +712,13 @@
   function buildCustomListSection() {
     const section = { id: 'custom', label: 'Added lifts', exercises: state.log.customExercises };
     const exs = state.log.customExercises;
-    const input = h('input', { class: 'custom-in', type: 'text', placeholder: 'Add a lift for today…', 'aria-label': 'New lift name' });
+    const input = h('input', { class: 'custom-in', type: 'text', list: 'liftSuggest', placeholder: 'Add a lift for today…', 'aria-label': 'New lift name' });
     const addBtn = h('button', { class: 'btn btn-ghost', onclick: () => {
       const name = input.value.trim();
       if (!name) return;
       const id = 'custom-' + Date.now();
-      state.log.customExercises.push({ id, name, scheme: '', defaultSets: 1, custom: true });
+      const muscles = libMuscles(name); // tag from the library so Recovery/Targets credit the right muscles
+      state.log.customExercises.push({ id, name, scheme: '', defaultSets: 1, custom: true, muscles: muscles || undefined });
       ensureExLog(state.log.customExercises[state.log.customExercises.length - 1]);
       save(); renderWorkout();
     } }, 'Add');
@@ -1854,6 +1876,7 @@
     state.config = await WTStore.getConfig();
     state.body = await WTStore.getBody();
     state.targets = await WTStore.getTargets();
+    populateLiftSuggest(); // wire the merged exercise library into the swap + add-lift typeaheads
 
     // default to today's weekday if it exists, else first day
     const todayId = state.program.days[(new Date().getDay() + 6) % 7] ? state.program.days[(new Date().getDay() + 6) % 7].id : state.program.days[0].id;
