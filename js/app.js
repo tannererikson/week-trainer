@@ -974,6 +974,8 @@
       h('span', { class: 'day-date' }, niceDate(state.dateKey))
     ));
 
+    if (day.type !== 'rest') view.appendChild(h('button', { class: 'btn btn-ghost block coach-btn', onclick: openCoach }, '🧠 Ask Coach'));
+
     if (day.verify) view.appendChild(h('div', { class: 'banner' }, '⚠ Lifts here are a best-guess — confirm or edit in program.js.'));
 
     const cardio = buildCardio(day); if (cardio) view.appendChild(cardio);
@@ -1683,6 +1685,49 @@
   }
   function postAny(payload) { return window.WT_PUBLIC ? postSyncSession(payload) : postSession(payload); }
 
+  // ---------- Claude coach ----------
+  // Compact snapshot of today's in-progress session to send to the coach.
+  function buildCoachSession() {
+    const day = currentDay();
+    const exs = [];
+    const grab = (ex) => {
+      const e = state.log.exercises[ex.id]; if (!e) return;
+      const sets = (e.sets || []).filter((s) => s.weight !== '' || s.reps !== '').map((s) => ({ weight: s.weight, reps: s.reps }));
+      if (sets.length) exs.push({ name: displayName(ex), sets, note: e.note || '' });
+    };
+    (day.sections || []).forEach((sec) => orderedExercises(sec).forEach(grab));
+    (state.log.customExercises || []).forEach(grab);
+    return { dayTitle: day.title, exercises: exs };
+  }
+  async function openCoach() {
+    const key = state.config && state.config.syncKey;
+    const body = $('#coachBody');
+    $('#coachModal').hidden = false;
+    if (!window.WT_SYNC_URL || !key) {
+      body.textContent = 'Set your Sync key first (⚙ Tools → Advanced) — the coach uses the same connection.';
+      return;
+    }
+    body.innerHTML = '<p class="muted">Thinking…</p>';
+    try {
+      const session = encodeURIComponent(JSON.stringify(buildCoachSession()));
+      const url = window.WT_SYNC_URL + '?action=coach&key=' + encodeURIComponent(key) + '&session=' + session;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.tips) renderCoachTips(data.tips);
+      else body.textContent = 'Coach error: ' + (data && data.error ? data.error : 'no tips returned');
+    } catch (err) {
+      body.textContent = 'Could not reach the coach. Check your connection and try again.';
+    }
+  }
+  // Render the coach text as simple bullet/paragraph lines.
+  function renderCoachTips(text) {
+    const body = $('#coachBody'); body.innerHTML = '';
+    String(text).split('\n').map((l) => l.trim()).filter(Boolean).forEach((line) => {
+      const bullet = /^[-•*]/.test(line);
+      body.appendChild(h('p', { class: bullet ? 'coach-bullet' : 'coach-line' }, line.replace(/^[-•*]\s*/, '')));
+    });
+  }
+
   async function finishAndSave() {
     try { await WTStore.setLog(state.dateKey, state.log); } catch (e) {}
     // public build with no sync key set yet: save on-device only, don't claim a sync happened
@@ -1822,6 +1867,10 @@
     $('#noteCancel').addEventListener('click', closeNoteModal);
     $('#noteSave').addEventListener('click', saveNote);
     $('#noteModal').addEventListener('click', (e) => { if (e.target.id === 'noteModal') closeNoteModal(); });
+
+    // coach modal
+    $('#coachClose').addEventListener('click', () => { $('#coachModal').hidden = true; });
+    $('#coachModal').addEventListener('click', (e) => { if (e.target.id === 'coachModal') $('#coachModal').hidden = true; });
 
     // swap-exercise modal
     $('#swapCancel').addEventListener('click', closeSwapModal);

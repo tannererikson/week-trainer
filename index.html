@@ -158,6 +158,17 @@
     </div>
   </div>
 
+  <!-- Claude coach: tips based on your history + today's session -->
+  <div class="modal-backdrop" id="coachModal" hidden>
+    <div class="modal" role="dialog" aria-label="Coach">
+      <h2>🧠 Coach</h2>
+      <div id="coachBody" class="coach-body"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="coachClose">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Swap a lift for a different exercise (today only, or save as the new default) -->
   <div class="modal-backdrop" id="swapModal" hidden>
     <div class="modal" role="dialog" aria-label="Swap exercise">
@@ -280,7 +291,7 @@
     window.WT_PUBLIC = true;
     // Endpoint is safe to ship (returns "bad key" without the secret). The key is entered
     // once on the device (Tools → Advanced → Sync key) and lives only in local storage.
-    window.WT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbw-loIshdrQnU4K3p4hJRqNetz8pUlLVlE-32ZFzOrSu8hRf0ShJXPAGKFSIWWJ_xKm-g/exec';
+    window.WT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzGmxvvaRSeuJrf0oDcUdg434k9Jh-itJJRf-Lzf1ha6nzhA-1ep0b0rjQ57r6_me_o/exec';
   </script>
   <script src="js/store.js" defer></script>
   <script src="js/program.js" defer></script>
