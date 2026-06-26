@@ -456,6 +456,22 @@
     $('#liftHero').style.backgroundImage = img ? 'url("' + img + '")' : '';
     $('#liftHero').classList.toggle('has-demo', !!img);
   }
+  // One-time: rename program lifts to their canonical database names
+  // (window.WT_LIFT_RENAME), even on a program already saved to the device. Gated by a
+  // config flag so it runs once and won't re-clobber a name the user later changes back.
+  async function migrateLiftNames() {
+    const RN = window.WT_LIFT_RENAME;
+    if (!RN || (state.config && state.config.liftRenameV1)) return;
+    let changed = false;
+    (state.program.days || []).forEach((d) => (d.sections || []).forEach((s) => (s.exercises || []).forEach((ex) => {
+      const c = RN[(ex.name || '').toLowerCase()];
+      if (c && ex.name !== c) { ex.name = c; changed = true; }
+    })));
+    state.config = state.config || {};
+    state.config.liftRenameV1 = true;
+    try { await WTStore.setConfig(state.config); } catch (e) {}
+    if (changed) { try { await WTStore.setProgram(state.program); } catch (e) {} }
+  }
   // Add a lift to today's "Added lifts" — auto-tags muscles from the library when the name matches.
   function addCustomLift(name) {
     name = (name || '').trim();
@@ -2019,6 +2035,7 @@
     state.config = await WTStore.getConfig();
     state.body = await WTStore.getBody();
     state.targets = await WTStore.getTargets();
+    await migrateLiftNames(); // one-time rename of program lifts to canonical DB names
     // library picker (add + replace)
     $('#libSearch').addEventListener('input', (e) => { libState.q = e.target.value.trim().toLowerCase(); renderLibResults(); });
     $('#libClose').addEventListener('click', closeLibModal);

@@ -52,7 +52,7 @@ window.WT_PROGRAM = {
             { id: 'mon-cablepress', name: 'Cable Chest Press', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Chest' }, muscles: { primary: ['chest'], secondary: ['triceps', 'front_delts'] },
               formCues: ['Keep constant tension'] },
-            { id: 'mon-cablefly', name: 'Cable Fly', scheme: '3 x 12–15', defaultSets: 3,
+            { id: 'mon-cablefly', name: 'Cable Crossover', scheme: '3 x 12–15', defaultSets: 3,
               targetMuscle: { label: 'Chest (squeeze)' }, muscles: { primary: ['chest'] },
               formCues: ['Squeeze and hold a beat', 'Soft elbows'] },
             { id: 'mon-pullover', name: 'Dumbbell Pullover', scheme: '3 x 12–15', defaultSets: 3,
@@ -63,7 +63,7 @@ window.WT_PROGRAM = {
         {
           id: 'mon-delts', label: 'Side / rear delts',
           exercises: [
-            { id: 'mon-lateral', name: 'Lateral Raise', scheme: '4 x 12–20', defaultSets: 4,
+            { id: 'mon-lateral', name: 'Dumbbell Lateral Raise', scheme: '4 x 12–20', defaultSets: 4,
               targetMuscle: { label: 'Side delts' }, muscles: { primary: ['side_delts'] },
               formCues: ['Side-delt width', 'Lead with the elbows'] },
             { id: 'mon-revpec', name: 'Reverse Pec Deck', scheme: '3 x 15–20', defaultSets: 3,
@@ -83,10 +83,10 @@ window.WT_PROGRAM = {
         {
           id: 'tue-main', label: 'Main',
           exercises: [
-            { id: 'tue-latpull', name: 'Lat Pulldown', scheme: '4 x 8–12', defaultSets: 4,
+            { id: 'tue-latpull', name: 'Wide-Grip Lat Pulldown', scheme: '4 x 8–12', defaultSets: 4,
               targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'], secondary: ['biceps'] },
               formCues: ['Drive elbows to ribs', 'Minimal swing'] },
-            { id: 'tue-csrow', name: 'Chest-Supported Machine Row', scheme: '4 x 8–12', defaultSets: 4,
+            { id: 'tue-csrow', name: 'Lever Seated Row', scheme: '4 x 8–12', defaultSets: 4,
               targetMuscle: { label: 'Mid back' }, muscles: { primary: ['mid_back'], secondary: ['lats', 'biceps'] },
               formCues: ['Squeeze the shoulder blades', 'Heavy-option lift'] }
           ]
@@ -105,7 +105,7 @@ window.WT_PROGRAM = {
         {
           id: 'tue-acc', label: 'Traps + lats',
           exercises: [
-            { id: 'tue-shrugs', name: 'Dumbbell Shrugs', scheme: '3 x 12–15', defaultSets: 3,
+            { id: 'tue-shrugs', name: 'Dumbbell Shrug', scheme: '3 x 12–15', defaultSets: 3,
               targetMuscle: { label: 'Traps' }, muscles: { primary: ['traps'] },
               formCues: ['Pause hard at the top', 'Straight up, no rolling'] },
             { id: 'tue-sapull', name: 'Straight-Arm Pulldown', scheme: '3 x 15–20', defaultSets: 3,
@@ -128,10 +128,10 @@ window.WT_PROGRAM = {
             { id: 'wed-legpress', name: 'Leg Press', scheme: '4 x 10–12', defaultSets: 4,
               targetMuscle: { label: 'Quads + glutes' }, muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
               formCues: ['Full controlled range', 'Heavy-option lift'] },
-            { id: 'wed-pendulum', name: 'Pendulum Squat', scheme: '3 x 10–12', defaultSets: 3,
+            { id: 'wed-pendulum', name: 'Hack Squat', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Quads' }, muscles: { primary: ['quads'], secondary: ['glutes'] },
               formCues: ['Quad focus; do while fresh', 'Hack Squat is an equal substitute'] },
-            { id: 'wed-legext', name: 'Leg Extension', scheme: '3 x 12–15', defaultSets: 3,
+            { id: 'wed-legext', name: 'Lever Leg Extension', scheme: '3 x 12–15', defaultSets: 3,
               targetMuscle: { label: 'Quads' }, muscles: { primary: ['quads'] },
               formCues: ['Pause and squeeze at the top'] },
             { id: 'wed-legcurl', name: 'Seated Leg Curl', scheme: '3 x 12–15', defaultSets: 3,
@@ -142,10 +142,10 @@ window.WT_PROGRAM = {
         {
           id: 'wed-acc', label: 'Accessory',
           exercises: [
-            { id: 'wed-adduction', name: 'Hip Adduction Machine', scheme: '3 x 15–20', defaultSets: 3,
+            { id: 'wed-adduction', name: 'Lever Seated Hip Adduction', scheme: '3 x 15–20', defaultSets: 3,
               targetMuscle: { label: 'Inner thigh' }, muscles: { primary: ['adductors'] },
               formCues: ['Inner thigh, easy joint load', 'Controlled, no swinging'] },
-            { id: 'wed-calf', name: 'Calf Raise', scheme: '3 x 12–15', defaultSets: 3,
+            { id: 'wed-calf', name: 'Lever Standing Calf Raise', scheme: '3 x 12–15', defaultSets: 3,
               targetMuscle: { label: 'Calves' }, muscles: { primary: ['calves'] },
               formCues: ['Control the bottom, no deep bounce', 'Full stretch, pause at the top'] }
           ]
@@ -166,10 +166,10 @@ window.WT_PROGRAM = {
         {
           id: 'thu-ssA', label: 'Superset 1', note: 'biceps then straight into triceps, ~60s rest', superset: true,
           exercises: [
-            { id: 'thu-cablecurl', name: 'Cable Biceps Curl', scheme: '3 x 10–12', defaultSets: 3,
+            { id: 'thu-cablecurl', name: 'Standing Biceps Cable Curl', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Biceps' }, muscles: { primary: ['biceps'] },
               formCues: ['Constant tension', 'Elbows pinned'] },
-            { id: 'thu-pushdown', name: 'Cable Triceps Pushdown', scheme: '3 x 10–12', defaultSets: 3,
+            { id: 'thu-pushdown', name: 'Cable Triceps Pushdown (V-Bar)', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Triceps' }, muscles: { primary: ['triceps'] },
               formCues: ['Elbows tucked, squeeze the bottom'] }
           ]
@@ -180,7 +180,7 @@ window.WT_PROGRAM = {
             { id: 'thu-inccurl', name: 'Incline Dumbbell Curl', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Biceps (stretched)' }, muscles: { primary: ['biceps'] },
               formCues: ['Stretched biceps', 'No swinging — strict'] },
-            { id: 'thu-tripress', name: 'Machine Triceps Press', scheme: '3 x 10–12', defaultSets: 3,
+            { id: 'thu-tripress', name: 'Machine Triceps Extension', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Triceps' }, muscles: { primary: ['triceps'] },
               formCues: ['Full lockout'] }
           ]
@@ -188,10 +188,10 @@ window.WT_PROGRAM = {
         {
           id: 'thu-ssC', label: 'Superset 3', note: 'biceps then straight into triceps, ~60s rest', superset: true,
           exercises: [
-            { id: 'thu-hammer', name: 'Cable Hammer Curl', scheme: '3 x 12–20', defaultSets: 3,
+            { id: 'thu-hammer', name: 'Cable Hammer Curl (With Rope)', scheme: '3 x 12–20', defaultSets: 3,
               targetMuscle: { label: 'Brachialis / forearm' }, muscles: { primary: ['biceps', 'forearms'] },
               formCues: ['Neutral grip', 'Controlled tempo'] },
-            { id: 'thu-rope', name: 'Rope Pushdown', scheme: '3 x 12–20', defaultSets: 3,
+            { id: 'thu-rope', name: 'Triceps Pushdown - Rope Attachment', scheme: '3 x 12–20', defaultSets: 3,
               targetMuscle: { label: 'Triceps' }, muscles: { primary: ['triceps'] },
               formCues: ['Spread the rope at the bottom', 'Drop set on the last set optional'] }
           ]
@@ -208,10 +208,10 @@ window.WT_PROGRAM = {
         {
           id: 'fri-chest', label: 'Chest',
           exercises: [
-            { id: 'fri-incmachpress', name: 'Incline Machine Press', scheme: '4 x 10–12', defaultSets: 4,
+            { id: 'fri-incmachpress', name: 'Leverage Incline Chest Press', scheme: '4 x 10–12', defaultSets: 4,
               targetMuscle: { label: 'Upper chest' }, muscles: { primary: ['chest'], secondary: ['front_delts', 'triceps'] },
               formCues: ['Second chest, different angle from Monday', 'No lockout slam'] },
-            { id: 'fri-cablefly', name: 'Cable Fly (low to high)', scheme: '3 x 12–15', defaultSets: 3,
+            { id: 'fri-cablefly', name: 'Low Cable Crossover', scheme: '3 x 12–15', defaultSets: 3,
               targetMuscle: { label: 'Chest (squeeze)' }, muscles: { primary: ['chest'] },
               formCues: ['Different angle from Monday', 'Squeeze at the midline'] }
           ]
@@ -219,10 +219,10 @@ window.WT_PROGRAM = {
         {
           id: 'fri-back', label: 'Back',
           exercises: [
-            { id: 'fri-ngpull', name: 'Neutral-Grip Lat Pulldown', scheme: '4 x 10–12', defaultSets: 4,
+            { id: 'fri-ngpull', name: 'Close-Grip Front Lat Pulldown', scheme: '4 x 10–12', defaultSets: 4,
               targetMuscle: { label: 'Lats' }, muscles: { primary: ['lats'], secondary: ['biceps'] },
               formCues: ['Second back hit, different grip from Tuesday'] },
-            { id: 'fri-row', name: 'Seated Cable Row', scheme: '3 x 10–12', defaultSets: 3,
+            { id: 'fri-row', name: 'Cable Seated Row', scheme: '3 x 10–12', defaultSets: 3,
               targetMuscle: { label: 'Mid back' }, muscles: { primary: ['mid_back'], secondary: ['lats', 'biceps'] },
               formCues: ['Row to the belly, squeeze the shoulder blades', 'Posture'] }
           ]
@@ -233,7 +233,7 @@ window.WT_PROGRAM = {
             { id: 'fri-facepull', name: 'Face Pull', scheme: '3 x 15–20', defaultSets: 3,
               targetMuscle: { label: 'Rear delts / posture' }, muscles: { primary: ['rear_delts'], secondary: ['traps'] },
               formCues: ['Pull to forehead, elbows high', 'Posture'] },
-            { id: 'fri-lateral', name: 'Lateral Raise', scheme: '3 x 15–20', defaultSets: 3,
+            { id: 'fri-lateral', name: 'Dumbbell Lateral Raise', scheme: '3 x 15–20', defaultSets: 3,
               targetMuscle: { label: 'Side delts' }, muscles: { primary: ['side_delts'] },
               formCues: ['Lead with the elbows', 'No swinging'] }
           ]
@@ -262,7 +262,7 @@ window.WT_PROGRAM = {
               targetMuscle: { label: 'Core' }, muscles: { primary: ['abs'] }, formCues: ['Brace, ribs down, no sag'] },
             { id: 'sat-deadbug', name: 'Dead Bug', scheme: '2–3 rounds', defaultSets: 3,
               targetMuscle: { label: 'Core' }, muscles: { primary: ['abs'] }, formCues: ['Low back flat, slow opposite arm/leg'] },
-            { id: 'sat-kneeraise', name: 'Hanging Knee Raise', scheme: '2–3 rounds', defaultSets: 3,
+            { id: 'sat-kneeraise', name: 'Hanging Leg Raise', scheme: '2–3 rounds', defaultSets: 3,
               targetMuscle: { label: 'Core' }, muscles: { primary: ['abs'] }, formCues: ['Curl the pelvis, no swinging'] },
             { id: 'sat-pallof', name: 'Pallof Press', scheme: '2–3 rounds', defaultSets: 3,
               targetMuscle: { label: 'Core (anti-rotation)' }, muscles: { primary: ['abs'] }, formCues: ['Resist the rotation, press straight out'] }
