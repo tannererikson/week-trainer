@@ -302,6 +302,19 @@ body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bo
 .modal-actions.swap-actions { flex-direction: column; }
 .modal-actions.swap-actions .btn { width: 100%; }
 
+/* ---------- add-lift library picker ---------- */
+.lib-modal { max-width: 460px; max-height: 86vh; display: flex; flex-direction: column; }
+.lib-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.lib-chip { font-size: .8rem; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+.lib-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lib-results { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 4px; min-height: 140px; }
+.lib-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); }
+.lib-row:active { background: var(--card-2); }
+.lib-row-name { font-weight: 600; line-height: 1.25; }
+.lib-row-meta { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
+.lib-row-custom { border-style: dashed; }
+.lib-count { text-align: center; margin: 8px 0 2px; font-size: .8rem; }
+
 /* ---------- full-screen detail (history) ---------- */
 .screen { position: fixed; inset: 0; z-index: 55; background: var(--bg); display: flex; flex-direction: column; }
 /* iOS-safe scroll lock: freeze the page behind any overlay so it can't scroll (and show

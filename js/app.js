@@ -447,6 +447,82 @@
     const r = window.WT_LIBRARY_BY_NAME && window.WT_LIBRARY_BY_NAME[(name || '').trim().toLowerCase()];
     return r ? { primary: r.primary || [], secondary: r.secondary || [] } : null;
   }
+  function muscleName(key) {
+    const m = window.WT_MUSCLES && window.WT_MUSCLES.MUSCLES[key];
+    return m ? m.name : key;
+  }
+  // Add a lift to today's "Added lifts" — auto-tags muscles from the library when the name matches.
+  function addCustomLift(name) {
+    name = (name || '').trim();
+    if (!name) return;
+    const id = 'custom-' + Date.now();
+    const muscles = libMuscles(name);
+    state.log.customExercises.push({ id, name, scheme: '', defaultSets: 1, custom: true, muscles: muscles || undefined });
+    ensureExLog(state.log.customExercises[state.log.customExercises.length - 1]);
+    save(); renderWorkout();
+    toast('Added ' + name);
+  }
+
+  // ---------- add-lift library picker (search + filter the 2,300-lift library) ----------
+  const libState = { q: '', filter: 'all' };
+  const LIB_FILTERS = [
+    ['all', 'All'], ['mine', 'My gym'], ['machine', 'Machine'], ['smith machine', 'Smith'],
+    ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'],
+    ['bodyweight', 'Bodyweight'], ['kettlebell', 'Kettlebell'], ['band', 'Band']
+  ];
+  const LIB_MAX = 60; // cap rendered rows; the search box narrows from there
+  function openLibModal() {
+    libState.q = ''; libState.filter = 'all';
+    const s = $('#libSearch'); if (s) s.value = '';
+    renderLibFilters(); renderLibResults();
+    $('#libModal').hidden = false;
+    setTimeout(() => { const i = $('#libSearch'); if (i) i.focus(); }, 50);
+  }
+  function closeLibModal() { $('#libModal').hidden = true; }
+  function renderLibFilters() {
+    const wrap = $('#libFilters'); if (!wrap) return;
+    wrap.textContent = '';
+    LIB_FILTERS.forEach(([val, label]) => wrap.appendChild(
+      h('button', { class: 'lib-chip' + (libState.filter === val ? ' on' : ''),
+        onclick: () => { libState.filter = val; renderLibFilters(); renderLibResults(); } }, label)
+    ));
+  }
+  function libMatch(r) {
+    if (libState.filter === 'mine') { if (!r.mine) return false; }
+    else if (libState.filter !== 'all') { if (r.equipment !== libState.filter) return false; }
+    return !libState.q || r.name.toLowerCase().indexOf(libState.q) !== -1;
+  }
+  function renderLibResults() {
+    const box = $('#libResults'); if (!box || !window.WT_LIBRARY) return;
+    box.textContent = '';
+    const q = libState.q;
+    const hits = window.WT_LIBRARY.filter(libMatch);
+    hits.sort((a, b) => {
+      if (!!b.mine !== !!a.mine) return b.mine ? 1 : -1;          // my-gym lifts first
+      if (q) { const as = a.name.toLowerCase().startsWith(q), bs = b.name.toLowerCase().startsWith(q);
+        if (as !== bs) return as ? -1 : 1; }                      // prefix matches before substring
+      return a.name.localeCompare(b.name);
+    });
+    if (!hits.length) {
+      box.appendChild(h('p', { class: 'muted lib-count' }, 'No lifts match.'));
+    } else {
+      hits.slice(0, LIB_MAX).forEach((r) => {
+        const meta = [r.equipment].concat(r.primary.map(muscleName)).filter(Boolean).join(' · ');
+        box.appendChild(h('button', { class: 'lib-row', onclick: () => { addCustomLift(r.name); closeLibModal(); } },
+          h('span', { class: 'lib-row-name' }, r.name + (r.mine ? ' ★' : '')),
+          h('span', { class: 'lib-row-meta' }, meta)));
+      });
+      box.appendChild(h('p', { class: 'muted lib-count' }, hits.length > LIB_MAX
+        ? ('Showing ' + LIB_MAX + ' of ' + hits.length + ' — keep typing to narrow')
+        : (hits.length + ' lift' + (hits.length === 1 ? '' : 's'))));
+    }
+    // let a name that isn't in the library still be added as a free-text custom lift
+    if (q && !hits.some((r) => r.name.toLowerCase() === q)) {
+      const raw = ($('#libSearch').value || '').trim();
+      box.appendChild(h('button', { class: 'lib-row lib-row-custom', onclick: () => { addCustomLift(raw); closeLibModal(); } },
+        h('span', { class: 'lib-row-name' }, 'Add “' + raw + '” as a custom lift')));
+    }
+  }
 
   // ---------- swap-exercise modal ----------
   // Find a lift object on the active day by id (program lift or one of today's added lifts).
@@ -712,20 +788,11 @@
   function buildCustomListSection() {
     const section = { id: 'custom', label: 'Added lifts', exercises: state.log.customExercises };
     const exs = state.log.customExercises;
-    const input = h('input', { class: 'custom-in', type: 'text', list: 'liftSuggest', placeholder: 'Add a lift for today…', 'aria-label': 'New lift name' });
-    const addBtn = h('button', { class: 'btn btn-ghost', onclick: () => {
-      const name = input.value.trim();
-      if (!name) return;
-      const id = 'custom-' + Date.now();
-      const muscles = libMuscles(name); // tag from the library so Recovery/Targets credit the right muscles
-      state.log.customExercises.push({ id, name, scheme: '', defaultSets: 1, custom: true, muscles: muscles || undefined });
-      ensureExLog(state.log.customExercises[state.log.customExercises.length - 1]);
-      save(); renderWorkout();
-    } }, 'Add');
+    const addBtn = h('button', { class: 'btn btn-ghost custom-add-btn', onclick: openLibModal }, '+ Search & add a lift');
     return h('div', { class: 'list-section', dataset: { section: 'custom' } },
       h('div', { class: 'list-section-label' }, h('h3', null, 'Added lifts')),
       exs.length ? exs.map((ex, i) => buildLiftRow(section, ex, i, exs.length)) : h('p', { class: 'muted' }, 'No extra lifts yet.'),
-      h('div', { class: 'custom-add' }, input, addBtn)
+      h('div', { class: 'custom-add' }, addBtn)
     );
   }
 
@@ -1876,7 +1943,11 @@
     state.config = await WTStore.getConfig();
     state.body = await WTStore.getBody();
     state.targets = await WTStore.getTargets();
-    populateLiftSuggest(); // wire the merged exercise library into the swap + add-lift typeaheads
+    populateLiftSuggest(); // wire the merged exercise library into the swap typeahead
+    // add-lift library picker
+    $('#libSearch').addEventListener('input', (e) => { libState.q = e.target.value.trim().toLowerCase(); renderLibResults(); });
+    $('#libClose').addEventListener('click', closeLibModal);
+    $('#libModal').addEventListener('click', (e) => { if (e.target.id === 'libModal') closeLibModal(); });
 
     // default to today's weekday if it exists, else first day
     const todayId = state.program.days[(new Date().getDay() + 6) % 7] ? state.program.days[(new Date().getDay() + 6) % 7].id : state.program.days[0].id;

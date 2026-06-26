@@ -197,6 +197,17 @@
     </div>
   </div>
 
+  <!-- Search/browse the merged exercise library to add a lift -->
+  <div class="modal-backdrop" id="libModal" hidden>
+    <div class="modal lib-modal" role="dialog" aria-label="Add a lift">
+      <h2>Add a lift</h2>
+      <input type="search" id="libSearch" class="note-input" placeholder="Search lifts&hellip;" autocomplete="off" autocapitalize="none" />
+      <div class="lib-filters" id="libFilters"></div>
+      <div class="lib-results" id="libResults"></div>
+      <div class="modal-actions"><button class="btn btn-ghost" id="libClose">Close</button></div>
+    </div>
+  </div>
+
   <!-- Log a body measurement (Body → Results) -->
   <div class="modal-backdrop" id="bodyEntryModal" hidden>
     <div class="modal" role="dialog" aria-label="Log measurement">
