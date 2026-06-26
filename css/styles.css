@@ -313,8 +313,11 @@ body.keypadding .lift-body { padding-bottom: calc(380px + env(safe-area-inset-bo
 .lib-chip { font-size: .8rem; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
 .lib-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .lib-results { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 4px; min-height: 140px; }
-.lib-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); }
+.lib-row { display: flex; flex-direction: row; align-items: center; gap: 10px; text-align: left; width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); }
 .lib-row:active { background: var(--card-2); }
+.lib-thumb { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: var(--bg-2); }
+.lib-thumb-fb { display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.lib-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lib-row-name { font-weight: 600; line-height: 1.25; }
 .lib-row-meta { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
 .lib-row-custom { border-style: dashed; }

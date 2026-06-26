@@ -460,6 +460,18 @@
     ['bodyweight', 'Bodyweight'], ['kettlebell', 'Kettlebell'], ['band', 'Band']
   ];
   const LIB_MAX = 60; // cap rendered rows; the search box narrows from there
+  // gym slang -> the words this dataset actually uses (ExerciseDB names plate-loaded
+  // machines "lever/leverage", not "hammer strength", etc.). Each search token also
+  // matches its aliases, so "hammer" finds "Leverage Incline Chest Press".
+  const SEARCH_ALIAS = {
+    hammer: ['lever', 'leverage'], hammerstrength: ['lever', 'leverage'],
+    iso: ['lever', 'leverage', 'isolateral'], isolateral: ['lever', 'leverage'],
+    machine: ['lever', 'leverage', 'machine', 'smith'],
+    db: ['dumbbell'], bb: ['barbell'], ohp: ['overhead', 'shoulder press'],
+    rdl: ['romanian deadlift'], pulldown: ['pulldown', 'pull-down'],
+    abs: ['ab ', 'crunch', 'core'], glute: ['glute', 'hip thrust'],
+    bike: ['cycle', 'bicycle', 'stationary'], situp: ['sit-up', 'sit up']
+  };
   function openPicker(opts) {
     opts = opts || {};
     libState.mode = opts.mode || 'add';
@@ -507,12 +519,25 @@
     if (libState.filter === 'best') { if (!libState.seed.some((m) => r.primary.indexOf(m) !== -1)) return false; }
     else if (libState.filter === 'mine') { if (!r.mine) return false; }
     else if (libState.filter !== 'all') { if (r.equipment !== libState.filter) return false; }
-    return !libState.q || r.name.toLowerCase().indexOf(libState.q) !== -1;
+    if (!libState.q) return true;
+    // each typed word must hit the name OR equipment — itself or an alias (AND across words)
+    const hay = (r.name + ' ' + (r.equipment || '')).toLowerCase();
+    return libState.q.split(/\s+/).filter(Boolean).every((tok) =>
+      [tok].concat(SEARCH_ALIAS[tok] || []).some((t) => hay.indexOf(t) !== -1));
   }
   function pick(name) {
     if (libState.mode === 'replace') applySwap(name, libState.asDefault);
     else addCustomLift(name);
     closeLibModal();
+  }
+  // Thumbnail for a row: lazy gif/photo from the source host; falls back to a 🏋️ tile
+  // for gym-pool lifts (no image) or if the image 404s. Images load online-only.
+  function libThumb(r) {
+    const fb = () => h('span', { class: 'lib-thumb lib-thumb-fb' }, '🏋️');
+    if (!r.img) return fb();
+    const img = h('img', { class: 'lib-thumb', src: r.img, loading: 'lazy', alt: '', decoding: 'async' });
+    img.addEventListener('error', () => img.replaceWith(fb()));
+    return img;
   }
   function renderLibResults() {
     const box = $('#libResults'); if (!box || !window.WT_LIBRARY) return;
@@ -534,8 +559,10 @@
       hits.slice(0, LIB_MAX).forEach((r) => {
         const meta = [r.equipment].concat(r.primary.map(muscleName)).filter(Boolean).join(' · ');
         box.appendChild(h('button', { class: 'lib-row', onclick: () => pick(r.name) },
-          h('span', { class: 'lib-row-name' }, r.name + (r.mine ? ' ★' : '')),
-          h('span', { class: 'lib-row-meta' }, meta)));
+          libThumb(r),
+          h('div', { class: 'lib-row-text' },
+            h('span', { class: 'lib-row-name' }, r.name + (r.mine ? ' ★' : '')),
+            h('span', { class: 'lib-row-meta' }, meta))));
       });
       box.appendChild(h('p', { class: 'muted lib-count' }, hits.length > LIB_MAX
         ? ('Showing ' + LIB_MAX + ' of ' + hits.length + ' — keep typing to narrow')
