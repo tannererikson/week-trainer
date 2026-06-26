@@ -804,11 +804,26 @@
     const n = e ? e.sets.length : (ex.defaultSets || 1);
     return n + ' set' + (n > 1 ? 's' : '');
   }
+  // The little square on each list row: the exercise's demo image when we have one,
+  // else the 🏋️/⚠️ emoji tile. Falls back to emoji if the image fails to load.
+  function liftRowTile(ex) {
+    const tile = h('div', { class: 'lift-tile' });
+    const rec = ex.caution ? null : liftLibRecord(ex);
+    if (rec && rec.img) {
+      const img = h('img', { class: 'lift-tile-img', src: rec.img, loading: 'lazy', alt: '', decoding: 'async' });
+      img.addEventListener('error', () => { img.remove(); tile.insertBefore(document.createTextNode('🏋️'), tile.firstChild); });
+      tile.appendChild(img);
+    } else {
+      tile.appendChild(document.createTextNode(ex.caution ? '⚠️' : '🏋️'));
+    }
+    tile.appendChild(h('span', { class: 'lift-badge' }, '💪'));
+    return tile;
+  }
   function buildLiftRow(section, ex, idx, count) {
     ensureExLog(ex);
     const done = liftDone(ex);
     return h('div', { class: 'lift-row' + (done ? ' done' : ''), onclick: () => openLift(section, ex) },
-      h('div', { class: 'lift-tile' }, ex.caution ? '⚠️' : '🏋️', h('span', { class: 'lift-badge' }, '💪')),
+      liftRowTile(ex),
       h('div', { class: 'lift-main' },
         isFocus(ex) ? h('div', { class: 'focus-label' }, 'FOCUS EXERCISE') : null,
         h('div', { class: 'lift-name' }, displayName(ex)),
